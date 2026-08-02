@@ -38,7 +38,7 @@ logging.getLogger("uvicorn.access").setLevel(logging.WARNING)
 # CORS Middleware
 ALLOWED_ORIGINS = os.getenv(
     "ALLOWED_ORIGINS",
-    "http://localhost:3000,http://localhost:3003,https://clipnest.vercel.app"
+    "http://localhost:3000,http://localhost:3003,https://clipnest.vercel.app,https://clipnest-backend-mrtq.onrender.com"
 ).split(",")
 
 app.add_middleware(
