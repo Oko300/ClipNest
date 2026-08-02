@@ -182,38 +182,33 @@ def download_video_with_progress(url: str, quality: str, format_type: str, start
     
     ydl_opts['progress_hooks'] = [progress_hook]
     
-    error_container = []
-
     loop = asyncio.get_event_loop()
     download_done = asyncio.Event()
     download_error = [None]
 
-    async def run_download_in_executor():
-        max_attempts = 3
-        for attempt in range(max_attempts):
-            try:
-                with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-                    await loop.run_in_executor(None, lambda: ydl.download([url]))
-                break
-            except Exception as e:
-                if attempt == max_attempts - 1:
-                    download_error[0] = e
-                    break
-                events_queue.put({'status': 'retrying', 'attempt': attempt + 2})
-                import time
-                time.sleep(2)
-        download_done.set()
+    def run_download_sync():
+        try:
+            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                ydl.download([url])
+        except Exception as e:
+            download_error[0] = e
+        finally:
+            loop.call_soon_threadsafe(download_done.set)
 
-    download_task = asyncio.create_task(run_download_in_executor())
+    import concurrent.futures
+    executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
+    future = loop.run_in_executor(executor, run_download_sync)
 
-    # Send heartbeat every 15 seconds while download runs
     while not download_done.is_set():
         try:
-            await asyncio.wait_for(asyncio.shield(download_done.wait()), timeout=15)
+            await asyncio.wait_for(
+                asyncio.shield(download_done.wait()),
+                timeout=15
+            )
         except asyncio.TimeoutError:
             yield ": heartbeat\n\n"
 
-    await download_task
+    await future
 
     if download_error[0]:
         raise download_error[0]
@@ -226,7 +221,7 @@ def download_video_with_progress(url: str, quality: str, format_type: str, start
                 break
             yield f"data: {json.dumps(event)}\n\n"
         except:
-            if not download_task.done(): # Check if the async task is still running
+            if not future.done(): # Check if the async task is still running
                 continue
             else:
                 break # If task is done and queue is empty, break
