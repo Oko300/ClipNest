@@ -187,16 +187,16 @@ export default function Home() {
           </h1>
         </div>
         <p className="text-[#71717a] text-sm max-w-sm leading-relaxed">
-          Paste any video link from YouTube, TikTok, Instagram, Twitter and 1000+ sites. No ads, no signup.
+          Paste any video link from TikTok, Instagram, Twitter, Facebook and 1000+ sites. No ads, no signup.
         </p>
         <div className="flex items-center gap-4 mt-1">
-          <span className="text-[#3f3f46] text-xs">YouTube</span>
-          <span className="text-[#3f3f46] text-xs">·</span>
           <span className="text-[#3f3f46] text-xs">TikTok</span>
           <span className="text-[#3f3f46] text-xs">·</span>
           <span className="text-[#3f3f46] text-xs">Instagram</span>
           <span className="text-[#3f3f46] text-xs">·</span>
           <span className="text-[#3f3f46] text-xs">Twitter</span>
+          <span className="text-[#3f3f46] text-xs">·</span>
+          <span className="text-[#3f3f46] text-xs">Facebook</span>
           <span className="text-[#3f3f46] text-xs">·</span>
           <span className="text-[#3f3f46] text-xs">1000+ more</span>
         </div>
