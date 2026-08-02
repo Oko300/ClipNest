@@ -59,9 +59,15 @@ export default function Home() {
       if (response.ok) {
         updateJob(jobId, { fetchStatus: "success", videoInfo: data });
       } else {
+        let errorMsg = data.error || "Failed to fetch video info";
+        if (errorMsg.toLowerCase().includes("sign in") || 
+            errorMsg.toLowerCase().includes("bot") ||
+            errorMsg.toLowerCase().includes("youtube")) {
+          errorMsg = "YouTube downloads are temporarily unavailable due to server restrictions. Try TikTok, Instagram, Twitter or Facebook instead.";
+        }
         updateJob(jobId, {
           fetchStatus: "error",
-          fetchError: data.error || "Failed to fetch video info",
+          fetchError: errorMsg,
         });
       }
     } catch (error) {
