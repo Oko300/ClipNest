@@ -3,14 +3,33 @@ import asyncio
 import json
 import os
 import uuid
+import base64
 import concurrent.futures
-from typing import AsyncGenerator
 
 COMMON_HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
     "Accept-Language": "en-US,en;q=0.9",
     "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
 }
+
+COOKIES_PATH = "/tmp/yt_cookies.txt"
+
+def setup_cookies():
+    b64 = os.environ.get("YOUTUBE_COOKIES_B64", "")
+    if b64 and not os.path.exists(COOKIES_PATH):
+        try:
+            decoded = base64.b64decode(b64).decode("utf-8")
+            with open(COOKIES_PATH, "w") as f:
+                f.write(decoded)
+        except Exception as e:
+            print(f"Failed to write cookies: {e}")
+
+def get_cookies_opts():
+    setup_cookies()
+    if os.path.exists(COOKIES_PATH):
+        return {"cookiefile": COOKIES_PATH}
+    return {}
+
 
 async def get_video_info(url: str):
     ydl_opts = {
@@ -23,6 +42,7 @@ async def get_video_info(url: str):
         'nocheckcertificate': True,
         'http_headers': COMMON_HEADERS,
         'format': 'bestvideo+bestaudio/best',
+        **get_cookies_opts(),
     }
     try:
         loop = asyncio.get_event_loop()
@@ -72,6 +92,7 @@ async def download_video_with_progress(url, quality, fmt, start_time, end_time):
         "addchapters": False,
         "nocheckcertificate": True,
         "http_headers": COMMON_HEADERS,
+        **get_cookies_opts(),
     }
 
     if fmt in ("mp3", "m4a", "wav") or (isinstance(quality, str) and quality.startswith("Audio")):
