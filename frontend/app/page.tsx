@@ -84,19 +84,34 @@ export default function Home() {
       downloadError: "",
     });
 
-    const sseUrl = `${process.env.NEXT_PUBLIC_API_URL}/api/download/stream?url=${encodeURIComponent(job.url)}&quality=${job.selectedQuality}&format_type=${job.selectedFormat}${job.startTime ? `&start_time=${job.startTime}` : ""}${job.endTime ? `&end_time=${job.endTime}` : ""}`
-    console.log("SSE URL:", sseUrl)
+    const sseUrl = `${process.env.NEXT_PUBLIC_API_URL}/api/download/stream?url=${encodeURIComponent(job.url)}&quality=${job.selectedQuality}&format_type=${job.selectedFormat}${job.startTime ? `&start_time=${job.startTime}` : ""}${job.endTime ? `&end_time=${job.endTime}` : ""}`;
+    console.log("SSE URL:", sseUrl);
 
     const eventSource = new EventSource(sseUrl);
 
     eventSource.onmessage = (event) => {
-      console.log("SSE event received:", event.data)
-      const parsed = JSON.parse(event.data);
+      console.log("SSE event received:", event.data);
+
+      // Ignore heartbeat comments and empty events
+      if (!event.data || event.data.trim() === "") return;
+
+      let parsed: any;
+      try {
+        parsed = JSON.parse(event.data);
+      } catch (e) {
+        console.log("SSE non-JSON event ignored:", event.data);
+        return;
+      }
+
       if (parsed.status === "downloading") {
         updateJob(jobId, {
           progress: parsed.percent,
           speed: parsed.speed,
           eta: parsed.eta,
+        });
+      } else if (parsed.status === "retrying") {
+        updateJob(jobId, {
+          speed: `Retrying... attempt ${parsed.attempt}`,
         });
       } else if (parsed.status === "processing") {
         updateJob(jobId, { progress: 99, speed: "Processing...", eta: "" });
@@ -126,7 +141,6 @@ export default function Home() {
     };
 
     eventSource.onerror = (error) => {
-      console.log("SSE error:", event)
       console.error("EventSource failed:", error);
       updateJob(jobId, {
         downloadState: "error",

@@ -2,80 +2,54 @@ import yt_dlp
 import asyncio
 import json
 import os
-import httpx
 import uuid
-import threading
-import queue
+import concurrent.futures
 from typing import AsyncGenerator
 
+COMMON_HEADERS = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+    "Accept-Language": "en-US,en;q=0.9",
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+}
+
 async def get_video_info(url: str):
-    """
-    Fetches video information using yt-dlp.
-    """
     ydl_opts = {
         'quiet': True,
-        'simulate': True,
-        'dump_single_json': True,
+        'no_warnings': True,
+        'extract_flat': False,
         'socket_timeout': 30,
-        "merge_output_format": "mp4",
-        "prefer_free_formats": True,
-        "nocheckcertificate": True,
-        "retries": 5,
-        "fragment_retries": 5,
-        "extractor_args": {"youtube": {"player_client": ["android_vr", "tv_downgraded", "web_embedded"]}},
-        "http_headers": {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
-        }
+        'retries': 5,
+        'fragment_retries': 5,
+        'nocheckcertificate': True,
+        'http_headers': COMMON_HEADERS,
+        'format': 'bestvideo+bestaudio/best',
     }
     try:
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            info = ydl.extract_info(url, download=False)
-            
-            # Extract relevant information
-            video_info = {
-                "id": info.get("id"),
-                "title": info.get("title"),
-                "thumbnail": info.get("thumbnail"),
-                "duration": info.get("duration"),
-                "formats": []
-            }
+        loop = asyncio.get_event_loop()
+        def _extract():
+            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                return ydl.extract_info(url, download=False)
 
-            # Filter and add formats
-            for f in info.get("formats", []):
-                if f.get("vcodec") != "none" and f.get("acodec") != "none": # Video and audio
-                    video_info["formats"].append({
-                        "format_id": f.get("format_id"),
-                        "ext": f.get("ext"),
-                        "resolution": f.get("resolution"),
-                        "fps": f.get("fps"),
-                        "vcodec": f.get("vcodec"),
-                        "acodec": f.get("acodec"),
-                        "filesize": f.get("filesize"),
-                        "url": f.get("url") # This URL might be temporary or require authentication
-                    })
-                elif f.get("acodec") != "none": # Audio only
-                    video_info["formats"].append({
-                        "format_id": f.get("format_id"),
-                        "ext": f.get("ext"),
-                        "acodec": f.get("acodec"),
-                        "filesize": f.get("filesize"),
-                        "url": f.get("url")
-                    })
-            
-            return video_info
+        info = await loop.run_in_executor(None, _extract)
 
-    except yt_dlp.DownloadError as e:
+        from routes.info import build_formats
+        return {
+            "id": info.get("id"),
+            "title": info.get("title"),
+            "thumbnail": info.get("thumbnail"),
+            "duration": info.get("duration"),
+            "uploader": info.get("uploader") or info.get("channel"),
+            "upload_date": info.get("upload_date"),
+            "formats": build_formats(info),
+        }
+
+    except yt_dlp.utils.DownloadError as e:
         raise ValueError(f"Could not fetch video info: {e}")
     except Exception as e:
         raise ValueError(f"An unexpected error occurred: {e}")
 
-async def download_video_with_progress(url, quality, fmt, start_time, end_time):
-    import asyncio
-    import concurrent.futures
-    import json
-    import os
-    import uuid
 
+async def download_video_with_progress(url, quality, fmt, start_time, end_time):
     file_id = str(uuid.uuid4()).replace("-", "")
     folder = f"/tmp/{file_id}"
     os.makedirs(folder, exist_ok=True)
@@ -91,14 +65,16 @@ async def download_video_with_progress(url, quality, fmt, start_time, end_time):
         "fragment_retries": 3,
         "skip_unavailable_fragments": True,
         "continuedl": True,
-        "noprogress": False,
+        "noprogress": True,
         "nopart": False,
         "add_metadata": False,
         "embed_metadata": False,
         "addchapters": False,
+        "nocheckcertificate": True,
+        "http_headers": COMMON_HEADERS,
     }
 
-    if fmt in ("mp3", "m4a", "wav") or quality.startswith("Audio"):
+    if fmt in ("mp3", "m4a", "wav") or (isinstance(quality, str) and quality.startswith("Audio")):
         ydl_opts["format"] = "bestaudio/best"
         codec_map = {
             "mp3": ("mp3", "192"),
@@ -118,7 +94,7 @@ async def download_video_with_progress(url, quality, fmt, start_time, end_time):
             },
         ]
     else:
-        height = quality.replace("p", "")
+        height = str(quality).replace("p", "")
         ydl_opts["format"] = (
             f"bestvideo[height<={height}][ext=mp4]+bestaudio[ext=m4a]"
             f"/bestvideo[height<={height}]+bestaudio"
@@ -135,7 +111,7 @@ async def download_video_with_progress(url, quality, fmt, start_time, end_time):
     if start_time and end_time:
         ydl_opts["download_sections"] = [f"*{start_time}-{end_time}"]
 
-    progress_data = {"percent": 0, "speed": "", "eta": ""}
+    progress_data = {"percent": "0%", "speed": "", "eta": ""}
 
     def progress_hook(d):
         if d["status"] == "downloading":
@@ -151,7 +127,6 @@ async def download_video_with_progress(url, quality, fmt, start_time, end_time):
 
     def run_download():
         try:
-            import yt_dlp
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                 ydl.download([url])
         except Exception as e:
@@ -162,7 +137,7 @@ async def download_video_with_progress(url, quality, fmt, start_time, end_time):
     executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
     loop.run_in_executor(executor, run_download)
 
-    yield f"data: {json.dumps({'status': 'downloading', 'percent': '0%'})}\n\n"
+    yield f"data: {json.dumps({'status': 'downloading', 'percent': '0%', 'speed': '', 'eta': ''})}\n\n"
 
     while not download_done.is_set():
         try:
