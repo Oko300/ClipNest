@@ -41,7 +41,6 @@ async def get_video_info(url: str):
         'fragment_retries': 5,
         'nocheckcertificate': True,
         'http_headers': COMMON_HEADERS,
-        'extractor_args': {'youtube': {'player_client': ['tv_embedded', 'web']}},
         **get_cookies_opts(),
     }
     try:
@@ -92,7 +91,6 @@ async def download_video_with_progress(url, quality, fmt, start_time, end_time):
         "addchapters": False,
         "nocheckcertificate": True,
         "http_headers": COMMON_HEADERS,
-        "extractor_args": {"youtube": {"player_client": ["tv_embedded", "web"]}},
         **get_cookies_opts(),
     }
 
@@ -118,11 +116,11 @@ async def download_video_with_progress(url, quality, fmt, start_time, end_time):
     else:
         height = str(quality).replace("p", "")
         ydl_opts["format"] = (
-            f"bestvideo[height<={height}][ext=mp4]+bestaudio[ext=m4a]"
-            f"/bestvideo[height<={height}]+bestaudio"
+            f"bestvideo[height<={height}]+bestaudio"
             f"/best[height<={height}]"
             f"/best"
         )
+        ydl_opts["merge_output_format"] = "mp4"
         ydl_opts["postprocessors"] = [
             {
                 "key": "FFmpegMetadata",
