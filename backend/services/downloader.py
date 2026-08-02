@@ -17,6 +17,15 @@ async def get_video_info(url: str):
         'simulate': True,
         'dump_single_json': True,
         'socket_timeout': 30,
+        "merge_output_format": "mp4",
+        "prefer_free_formats": True,
+        "nocheckcertificate": True,
+        "retries": 5,
+        "fragment_retries": 5,
+        "extractor_args": {"youtube": {"player_client": ["android_vr", "tv_downgraded", "web_embedded"]}},
+        "http_headers": {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+        }
     }
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
@@ -103,15 +112,22 @@ def download_video_with_progress(url: str, quality: str, format_type: str, start
         'http_headers': {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
         },
-        'extractor_args': {
-            'youtube': {
-                'player_client': ['android_vr', 'tv_downgraded', 'web_embedded']
-            }
+        'extractor_args': {"youtube": {"player_client": ["android_vr", "tv_downgraded", "web_embedded"]}},
+        "merge_output_format": "mp4",
+        "prefer_free_formats": True,
+        "nocheckcertificate": True,
+        "retries": 5,
+        "fragment_retries": 5,
+        "http_headers": {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
         }
     }
     
-    if format_type in ("mp3", "m4a", "wav") or quality.startswith("Audio"):
+    if format_type == "mp3":
         ydl_opts["format"] = "bestaudio/best"
+        # Remove merge_output_format for audio extraction
+        if "merge_output_format" in ydl_opts:
+            del ydl_opts["merge_output_format"]
         codec_map = {
             "mp3": ("mp3", "192"),
             "m4a": ("m4a", "192"),
@@ -130,13 +146,16 @@ def download_video_with_progress(url: str, quality: str, format_type: str, start
             },
         ]
     else:
-        height = quality.replace("p", "")
-        ydl_opts["format"] = (
-            f"bestvideo[height<={height}][ext=mp4]+bestaudio[ext=m4a]"
-            f"/bestvideo[height<={height}]+bestaudio"
-            f"/best[height<={height}]"
-            f"/best"
-        )
+        if quality == "1080p":
+            ydl_opts["format"] = "best[height<=1080][ext=mp4]/best[height<=1080]/best"
+        elif quality == "720p":
+            ydl_opts["format"] = "best[height<=720][ext=mp4]/best[height<=720]/best"
+        elif quality == "480p":
+            ydl_opts["format"] = "best[height<=480][ext=mp4]/best[height<=480]/best"
+        elif quality == "360p":
+            ydl_opts["format"] = "best[height<=360][ext=mp4]/best[height<=360]/best"
+        else:
+            ydl_opts["format"] = "best[ext=mp4]/best"
         ydl_opts['postprocessors'] = [
             {
                 'key': 'FFmpegMetadata',
@@ -164,27 +183,42 @@ def download_video_with_progress(url: str, quality: str, format_type: str, start
     ydl_opts['progress_hooks'] = [progress_hook]
     
     error_container = []
-    
-    def run_download():
+
+    loop = asyncio.get_event_loop()
+    download_done = asyncio.Event()
+    download_error = [None]
+
+    async def run_download_in_executor():
         max_attempts = 3
         for attempt in range(max_attempts):
             try:
                 with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-                    ydl.download([url])
+                    await loop.run_in_executor(None, lambda: ydl.download([url]))
                 break
             except Exception as e:
                 if attempt == max_attempts - 1:
-                    error_container.append(str(e))
+                    download_error[0] = e
                     break
                 events_queue.put({'status': 'retrying', 'attempt': attempt + 2})
-                # Use time.sleep for blocking sleep in a thread
                 import time
                 time.sleep(2)
-        events_queue.put(None)
-    
-    thread = threading.Thread(target=run_download)
-    thread.start()
-    
+        download_done.set()
+
+    download_task = asyncio.create_task(run_download_in_executor())
+
+    # Send heartbeat every 15 seconds while download runs
+    while not download_done.is_set():
+        try:
+            await asyncio.wait_for(asyncio.shield(download_done.wait()), timeout=15)
+        except asyncio.TimeoutError:
+            yield ": heartbeat\n\n"
+
+    await download_task
+
+    if download_error[0]:
+        raise download_error[0]
+
+    # Original progress hook handling
     while True:
         try:
             event = events_queue.get(timeout=1)
@@ -192,12 +226,13 @@ def download_video_with_progress(url: str, quality: str, format_type: str, start
                 break
             yield f"data: {json.dumps(event)}\n\n"
         except:
-            if not thread.is_alive():
-                break
-            continue
-    
-    if error_container:
-        yield f"data: {json.dumps({'status': 'error', 'message': error_container[0]})}\n\n"
+            if not download_task.done(): # Check if the async task is still running
+                continue
+            else:
+                break # If task is done and queue is empty, break
+
+    if download_error[0]: # Re-raise if there was an error during download
+        yield f"data: {json.dumps({'status': 'error', 'message': str(download_error[0])})}\n\n"
         return
     
     found_file = None
