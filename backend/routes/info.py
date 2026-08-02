@@ -101,7 +101,6 @@ async def get_info(request: Request, body: InfoRequest):
         raise HTTPException(status_code=400, detail="Invalid or blocked URL.")
     try:
         video_info = await get_video_info(body.url)
-        video_info["formats"] = build_formats(video_info) # Call build_formats here
         return video_info
     except ValueError as e:
         return JSONResponse(status_code=400, content={"error": str(e)})
