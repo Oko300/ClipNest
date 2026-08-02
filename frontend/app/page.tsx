@@ -104,8 +104,11 @@ export default function Home() {
       }
 
       if (parsed.status === "downloading") {
+        const percentNum = parseFloat(
+          String(parsed.percent).replace("%", "")
+        ) || 0;
         updateJob(jobId, {
-          progress: parsed.percent,
+          progress: percentNum,
           speed: parsed.speed,
           eta: parsed.eta,
         });
