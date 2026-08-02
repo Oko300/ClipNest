@@ -124,13 +124,24 @@ export default function Home() {
         });
         eventSource.close();
 
-        const a = document.createElement("a");
-        a.href =
-          process.env.NEXT_PUBLIC_API_URL + "/api/download/file/" + parsed.file_id;
-        a.download = parsed.filename;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
+        try {
+          const downloadUrl = `${process.env.NEXT_PUBLIC_API_URL}/api/download/file/${parsed.file_id}`;
+          const a = document.createElement("a");
+          a.href = downloadUrl;
+          a.download = parsed.filename || "download";
+          a.style.display = "none";
+          document.body.appendChild(a);
+          a.click();
+          setTimeout(() => {
+            document.body.removeChild(a);
+          }, 1000);
+        } catch (downloadErr) {
+          console.error("Download trigger failed:", downloadErr);
+          window.open(
+            `${process.env.NEXT_PUBLIC_API_URL}/api/download/file/${parsed.file_id}`,
+            "_blank"
+          );
+        }
       } else if (parsed.status === "error") {
         updateJob(jobId, {
           downloadState: "error",

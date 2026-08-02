@@ -15,16 +15,19 @@ COMMON_HEADERS = {
 COOKIES_PATH = "/tmp/yt_cookies.txt"
 
 def setup_cookies():
+    """Always rewrite cookies from environment variable on every call."""
     b64 = os.environ.get("YOUTUBE_COOKIES_B64", "")
-    if b64 and not os.path.exists(COOKIES_PATH):
-        try:
-            decoded = base64.b64decode(b64).decode("utf-8")
-            with open(COOKIES_PATH, "w") as f:
-                f.write(decoded)
-        except Exception as e:
-            print(f"Failed to write cookies: {e}")
+    if not b64:
+        return
+    try:
+        decoded = base64.b64decode(b64).decode("utf-8")
+        with open(COOKIES_PATH, "w", encoding="utf-8") as f:
+            f.write(decoded)
+    except Exception as e:
+        print(f"Failed to write cookies: {e}")
 
 def get_cookies_opts():
+    """Write cookies and return cookiefile option."""
     setup_cookies()
     if os.path.exists(COOKIES_PATH):
         return {"cookiefile": COOKIES_PATH}
