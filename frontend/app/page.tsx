@@ -82,6 +82,8 @@ function FeedbackForm() {
 
 export default function Home() {
   const [jobs, setJobs] = useState<DownloadJob[]>([]);
+  const [installPrompt, setInstallPrompt] = React.useState<any>(null)
+  const [showInstallBanner, setShowInstallBanner] = React.useState(false)
 
   useEffect(() => {
     const handleOffline = () => {
@@ -90,6 +92,23 @@ export default function Home() {
     window.addEventListener("offline", handleOffline);
     return () => window.removeEventListener("offline", handleOffline);
   }, []);
+
+  useEffect(() => {
+    window.addEventListener("beforeinstallprompt", (e) => {
+      e.preventDefault()
+      setInstallPrompt(e)
+      setShowInstallBanner(true)
+    })
+  }, [])
+
+  const handleInstall = async () => {
+    if (!installPrompt) return
+    installPrompt.prompt()
+    const result = await installPrompt.userChoice
+    if (result.outcome === "accepted") {
+      setShowInstallBanner(false)
+    }
+  }
 
   const generateId = () => Math.random().toString(36).substring(2, 10);
 
@@ -272,50 +291,73 @@ export default function Home() {
 
   return (
   <div className="min-h-screen bg-[#0a0a0a]">
-    <div className="max-w-[680px] mx-auto px-4 py-16 flex flex-col gap-8">
-      
-      {/* Header */}
-      <div className="text-center flex flex-col items-center gap-3">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-[#6366f1] rounded-lg flex items-center justify-center text-white font-bold text-sm">C</div>
-          <h1 className="text-3xl font-bold text-white tracking-tight">
-            Clip<span className="text-[#6366f1]">Nest</span>
-          </h1>
+      <div className="max-w-[680px] mx-auto px-4 pt-12 pb-24 flex flex-col gap-6">
+        
+        {/* Header */}
+        <div className="text-center flex flex-col items-center gap-3">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 bg-[#6366f1] rounded-lg flex items-center justify-center text-white font-bold text-sm">C</div>
+            <h1 className="text-3xl font-bold text-white tracking-tight">
+              Clip<span className="text-[#6366f1]">Nest</span>
+            </h1>
+          </div>
+          <p className="text-[#71717a] text-sm max-w-sm leading-relaxed">
+            Paste any video link from TikTok, Instagram, Twitter, Facebook and 1000+ sites. No ads, no signup.
+          </p>
+          <div className="flex items-center gap-4 mt-1">
+            <span className="text-[#3f3f46] text-xs">TikTok</span>
+            <span className="text-[#3f3f46] text-xs">·</span>
+            <span className="text-[#3f3f46] text-xs">Instagram</span>
+            <span className="text-[#3f3f46] text-xs">·</span>
+            <span className="text-[#3f3f46] text-xs">Twitter</span>
+            <span className="text-[#3f3f46] text-xs">·</span>
+            <span className="text-[#3f3f46] text-xs">Facebook</span>
+            <span className="text-[#3f3f46] text-xs">·</span>
+            <span className="text-[#3f3f46] text-xs">1000+ more</span>
+          </div>
         </div>
-        <p className="text-[#71717a] text-sm max-w-sm leading-relaxed">
-          Paste any video link from TikTok, Instagram, Twitter, Facebook and 1000+ sites. No ads, no signup.
-        </p>
-        <div className="flex items-center gap-4 mt-1">
-          <span className="text-[#3f3f46] text-xs">TikTok</span>
-          <span className="text-[#3f3f46] text-xs">·</span>
-          <span className="text-[#3f3f46] text-xs">Instagram</span>
-          <span className="text-[#3f3f46] text-xs">·</span>
-          <span className="text-[#3f3f46] text-xs">Twitter</span>
-          <span className="text-[#3f3f46] text-xs">·</span>
-          <span className="text-[#3f3f46] text-xs">Facebook</span>
-          <span className="text-[#3f3f46] text-xs">·</span>
-          <span className="text-[#3f3f46] text-xs">1000+ more</span>
-        </div>
-      </div>
 
-      {/* URL Input */}
-      <UrlInput onFetch={addJob} isLoading={false} error="" />
+        {/* URL Input */}
+        <UrlInput onFetch={addJob} isLoading={false} error="" />
 
-      {/* How it works section */}
-      <div className="grid grid-cols-3 gap-4 text-center">
-        <div className="flex flex-col items-center gap-2">
-          <div className="w-10 h-10 rounded-full bg-[#111111] border border-[#1f1f1f] flex items-center justify-center text-lg">📋</div>
-          <p className="text-[#52525b] text-xs leading-relaxed">Paste any video link from 1000+ sites</p>
+        {/* How it works section */}
+        <div className="grid grid-cols-3 gap-2 text-center">
+          <div className="flex flex-col items-center gap-2">
+            <div className="w-8 h-8 rounded-full bg-[#111111] border border-[#1f1f1f] flex items-center justify-center text-lg">📋</div>
+            <p className="text-[#52525b] text-xs leading-relaxed">Paste any video link from 1000+ sites</p>
+          </div>
+          <div className="flex flex-col items-center gap-2">
+            <div className="w-8 h-8 rounded-full bg-[#111111] border border-[#1f1f1f] flex items-center justify-center text-lg">⚡</div>
+            <p className="text-[#52525b] text-xs leading-relaxed">Choose quality and format</p>
+          </div>
+          <div className="flex flex-col items-center gap-2">
+            <div className="w-8 h-8 rounded-full bg-[#111111] border border-[#1f1f1f] flex items-center justify-center text-lg">✅</div>
+            <p className="text-[#52525b] text-xs leading-relaxed">Download instantly. No watermark, no signup, no ads.</p>
+          </div>
         </div>
-        <div className="flex flex-col items-center gap-2">
-          <div className="w-10 h-10 rounded-full bg-[#111111] border border-[#1f1f1f] flex items-center justify-center text-lg">⚡</div>
-          <p className="text-[#52525b] text-xs leading-relaxed">Choose quality and format</p>
-        </div>
-        <div className="flex flex-col items-center gap-2">
-          <div className="w-10 h-10 rounded-full bg-[#111111] border border-[#1f1f1f] flex items-center justify-center text-lg">✅</div>
-          <p className="text-[#52525b] text-xs leading-relaxed">Download instantly. No watermark, no signup, no ads.</p>
-        </div>
-      </div>
+
+        {showInstallBanner && (
+          <div className="flex items-center justify-between bg-[#111111] border border-[#6366f1] rounded-xl px-4 py-3">
+            <div>
+              <p className="text-white text-sm font-medium">Install ClipNest App</p>
+              <p className="text-[#71717a] text-xs">Add to home screen for quick access</p>
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setShowInstallBanner(false)}
+                className="text-[#52525b] text-xs px-3 py-1"
+              >
+                Later
+              </button>
+              <button
+                onClick={handleInstall}
+                className="bg-[#6366f1] text-white text-xs px-3 py-2 rounded-lg"
+              >
+                Install
+              </button>
+            </div>
+          </div>
+        )}
 
       {/* Jobs or Empty State */}
       {jobs.length === 0 ? (

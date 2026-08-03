@@ -21,25 +21,16 @@ export default function DownloadOptions({ formats, selectedQuality, selectedForm
   const videoFormats = formats.filter(f => f.quality !== "Audio only")
 
   return (
-    <div style={{padding: '16px', display: 'flex', flexDirection: 'column', gap: '16px'}}>
+    <div className="p-4 flex flex-col gap-4">
 
       {/* Format Toggle */}
-      <div style={{display: 'flex', gap: '8px', padding: '4px', backgroundColor: '#0a0a0a', borderRadius: '12px', border: '1px solid #1f1f1f'}}>
+      <div className="flex gap-2 p-1 bg-[#0a0a0a] border border-[#1f1f1f] rounded-xl">
         {[{ label: "Video (MP4)", value: "mp4" }, { label: "Audio only (MP3)", value: "mp3" }].map(opt => (
           <button
             key={opt.value}
             onClick={() => onFormatChange(opt.value)}
-            style={{
-              flex: 1,
-              padding: '8px',
-              borderRadius: '8px',
-              fontSize: '12px',
-              fontWeight: 600,
-              border: 'none',
-              cursor: 'pointer',
-              backgroundColor: selectedFormat === opt.value ? '#6366f1' : 'transparent',
-              color: selectedFormat === opt.value ? '#ffffff' : '#71717a',
-            }}
+            className={`flex-1 py-2 rounded-lg text-xs font-semibold border-none cursor-pointer transition-colors
+              ${selectedFormat === opt.value ? 'bg-[#6366f1] text-white' : 'bg-transparent text-[#71717a]'}`}
           >
             {opt.label}
           </button>
@@ -48,24 +39,15 @@ export default function DownloadOptions({ formats, selectedQuality, selectedForm
 
       {/* Quality Pills */}
       {selectedFormat === "mp4" && videoFormats.length > 0 && (
-        <div style={{display: 'flex', flexDirection: 'column', gap: '8px'}}>
-          <p style={{color: '#52525b', fontSize: '11px', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.05em'}}>Quality</p>
-          <div style={{display: 'flex', flexWrap: 'wrap', gap: '8px'}}>
+        <div className="flex flex-col gap-2">
+          <p className="text-[#52525b] text-[11px] font-medium uppercase tracking-wider">Quality</p>
+          <div className="flex flex-wrap gap-2">
             {videoFormats.map((f) => (
               <button
                 key={f.quality}
                 onClick={() => onQualityChange(f.quality)}
-                style={{
-                  padding: '6px 12px',
-                  borderRadius: '8px',
-                  fontSize: '12px',
-                  fontWeight: 600,
-                  border: selectedQuality === f.quality ? '1px solid #6366f1' : '1px solid #333333',
-                  cursor: 'pointer',
-                  backgroundColor: selectedQuality === f.quality ? '#6366f1' : '#1a1a1a',
-                  color: '#ffffff',
-                  minWidth: '60px',
-                }}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors min-w-[60px]
+                  ${selectedQuality === f.quality ? 'bg-[#6366f1] border border-[#6366f1] text-white' : 'bg-[#1a1a1a] border border-[#333333] text-white'}`}
               >
                 {f.quality}{f.filesize_mb > 0 ? ` ~${f.filesize_mb}MB` : ""}
               </button>
@@ -75,77 +57,49 @@ export default function DownloadOptions({ formats, selectedQuality, selectedForm
       )}
 
       {/* Advanced Clip Cutter */}
-      <div style={{display: 'flex', flexDirection: 'column', gap: '12px'}}>
+      <div className="flex flex-col gap-3">
         <button
           onClick={() => setShowAdvanced(!showAdvanced)}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            color: '#52525b',
-            fontSize: '12px',
-            background: 'none',
-            border: 'none',
-            cursor: 'pointer',
-            padding: 0,
-          }}
+          className="flex items-center gap-2 text-[#52525b] text-xs bg-none border-none cursor-pointer p-0"
         >
-          <span style={{transform: showAdvanced ? 'rotate(90deg)' : 'none', transition: 'transform 0.2s'}}>&#9658;</span>
+          <span className={`transition-transform duration-200 ${showAdvanced ? 'rotate-90' : ''}`}>&#9658;</span>
           Clip a specific portion
         </button>
         {showAdvanced && (
           <div>
-            <div style={{display:'flex', gap:'6px', marginBottom:'8px'}}>
+            <div className="flex gap-1.5 mb-2">
               <button onClick={() => { onStartTimeChange('00:00:00'); onEndTimeChange('00:05:00'); }}
-                style={{padding:'4px 10px', fontSize:'11px', borderRadius:'6px', border:'1px solid #333', backgroundColor:'#1a1a1a', color:'#a1a1aa', cursor:'pointer'}}>
+                className="px-2.5 py-1 text-[11px] rounded-md border border-[#333] bg-[#1a1a1a] text-[#a1a1aa] cursor-pointer">
                 First 5 min
               </button>
               <button onClick={() => { onStartTimeChange('00:00:00'); onEndTimeChange('00:01:00'); }}
-                style={{padding:'4px 10px', fontSize:'11px', borderRadius:'6px', border:'1px solid #333', backgroundColor:'#1a1a1a', color:'#a1a1aa', cursor:'pointer'}}>
+                className="px-2.5 py-1 text-[11px] rounded-md border border-[#333] bg-[#1a1a1a] text-[#a1a1aa] cursor-pointer">
                 First 1 min
               </button>
               <button onClick={() => { onStartTimeChange('00:00:00'); onEndTimeChange('00:00:30'); }}
-                style={{padding:'4px 10px', fontSize:'11px', borderRadius:'6px', border:'1px solid #333', backgroundColor:'#1a1a1a', color:'#a1a1aa', cursor:'pointer'}}>
+                className="px-2.5 py-1 text-[11px] rounded-md border border-[#333] bg-[#1a1a1a] text-[#a1a1aa] cursor-pointer">
                 First 30 sec
               </button>
             </div>
-            <div style={{display: 'flex', gap: '12px', paddingLeft: '16px', borderLeft: '1px solid #1f1f1f'}}>
-              <div style={{display: 'flex', flexDirection: 'column', gap: '6px', flex: 1}}>
-                <label style={{color: '#52525b', fontSize: '12px'}}>Start time</label>
+            <div className="flex gap-3 pl-4 border-l border-[#1f1f1f]">
+              <div className="flex flex-col gap-1.5 flex-1">
+                <label className="text-[#52525b] text-xs">Start time</label>
                 <input
                   type="text"
                   placeholder="00:00:00"
                   value={startTime}
                   onChange={(e) => onStartTimeChange(e.target.value)}
-                  style={{
-                    backgroundColor: '#0a0a0a',
-                    border: '1px solid #1f1f1f',
-                    color: '#f5f5f5',
-                    borderRadius: '8px',
-                    padding: '8px 12px',
-                    fontSize: '14px',
-                    outline: 'none',
-                    fontFamily: 'monospace',
-                  }}
+                  className="bg-[#0a0a0a] border border-[#1f1f1f] text-[#f5f5f5] rounded-lg px-3 py-2 text-sm outline-none font-mono"
                 />
               </div>
-              <div style={{display: 'flex', flexDirection: 'column', gap: '6px', flex: 1}}>
-                <label style={{color: '#52525b', fontSize: '12px'}}>End time</label>
+              <div className="flex flex-col gap-1.5 flex-1">
+                <label className="text-[#52525b] text-xs">End time</label>
                 <input
                   type="text"
                   placeholder="00:00:00"
                   value={endTime}
                   onChange={(e) => onEndTimeChange(e.target.value)}
-                  style={{
-                    backgroundColor: '#0a0a0a',
-                    border: '1px solid #1f1f1f',
-                    color: '#f5f5f5',
-                    borderRadius: '8px',
-                    padding: '8px 12px',
-                    fontSize: '14px',
-                    outline: 'none',
-                    fontFamily: 'monospace',
-                  }}
+                  className="bg-[#0a0a0a] border border-[#1f1f1f] text-[#f5f5f5] rounded-lg px-3 py-2 text-sm outline-none font-mono"
                 />
               </div>
             </div>
@@ -157,17 +111,10 @@ export default function DownloadOptions({ formats, selectedQuality, selectedForm
       <button
         onClick={onDownload}
         disabled={downloadState === "downloading"}
-        style={{
-          width: '100%',
-          padding: '12px',
-          borderRadius: '12px',
-          fontSize: '14px',
-          fontWeight: 600,
-          border: 'none',
-          cursor: downloadState === "downloading" ? 'not-allowed' : 'pointer',
-          backgroundColor: downloadState === "downloading" ? '#1f1f1f' : downloadState === "done" ? '#22c55e' : '#6366f1',
-          color: downloadState === "downloading" ? '#52525b' : '#ffffff',
-        }}
+        className={`w-full py-3 rounded-xl text-sm font-semibold border-none transition-colors
+          ${downloadState === "downloading" ? 'bg-[#1f1f1f] text-[#52525b] cursor-not-allowed' :
+            downloadState === "done" ? 'bg-[#22c55e] text-white cursor-pointer' :
+            'bg-[#6366f1] text-white cursor-pointer'}`}
       >
         {downloadState === "idle" && "Download"}
         {downloadState === "downloading" && "Downloading..."}
