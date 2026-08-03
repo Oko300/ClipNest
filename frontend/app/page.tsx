@@ -1,5 +1,5 @@
 "use client"
-import { useState, useEffect } from "react"
+import React, { useState, useEffect } from "react"
 import { DownloadJob } from "../types/index"
 import UrlInput from "../components/UrlInput"
 import JobCard from "../components/JobCard"
@@ -29,6 +29,7 @@ function FeedbackForm() {
         setStatus("sent")
         setFeedback("")
         setEmail("")
+        setTimeout(() => setStatus("idle"), 5000)
       } else {
         setStatus("error")
       }
@@ -38,26 +39,25 @@ function FeedbackForm() {
   }
 
   return (
-    <div className="flex flex-col gap-3">
-      <textarea
-        value={feedback}
-        onChange={(e) => setFeedback(e.target.value)}
-        placeholder="What do you think? What features would you like to see?"
-        rows={3}
-        className="w-full bg-[#111111] border border-[#1f1f1f] rounded-lg px-4 py-3 text-[#f5f5f5] text-sm placeholder-[#3f3f46] resize-none focus:outline-none focus:border-[#6366f1]"
-      />
-      <input
-        type="email"
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-        placeholder="Your email (optional)"
-        className="w-full bg-[#111111] border border-[#1f1f1f] rounded-lg px-4 py-3 text-[#f5f5f5] text-sm placeholder-[#3f3f46] focus:outline-none focus:border-[#6366f1]"
-      />
-      {status === "sent" ? (
-        <div className="w-full bg-[#111111] border border-[#22c55e] text-[#22c55e] text-sm font-medium py-3 rounded-lg text-center">
-          ✅ Feedback sent! Thank you.
-        </div>
-      ) : (
+    <div className="mt-8 border-t border-[#1f1f1f] pt-8">
+      <h3 className="text-[#71717a] text-sm text-center mb-4">
+        💬 Share your feedback or feature requests
+      </h3>
+      <div className="flex flex-col gap-3">
+        <textarea
+          value={feedback}
+          onChange={(e) => setFeedback(e.target.value)}
+          placeholder="What do you think? What features would you like to see?"
+          rows={3}
+          className="w-full bg-[#111111] border border-[#1f1f1f] rounded-lg px-4 py-3 text-[#f5f5f5] text-sm placeholder-[#3f3f46] resize-none focus:outline-none focus:border-[#6366f1]"
+        />
+        <input
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          placeholder="Your email (optional)"
+          className="w-full bg-[#111111] border border-[#1f1f1f] rounded-lg px-4 py-3 text-[#f5f5f5] text-sm placeholder-[#3f3f46] focus:outline-none focus:border-[#6366f1]"
+        />
         <button
           onClick={handleSubmit}
           disabled={status === "sending"}
@@ -65,12 +65,17 @@ function FeedbackForm() {
         >
           {status === "sending" ? "Sending..." : "Send Feedback"}
         </button>
-      )}
-      {status === "error" && (
-        <p className="text-[#ef4444] text-xs text-center">
-          Failed to send. Please try again.
-        </p>
-      )}
+        {status === "sent" && (
+          <div className="w-full bg-[#111111] border border-[#22c55e] text-[#22c55e] text-sm py-2 rounded-lg text-center">
+            ✅ Feedback sent! Thank you.
+          </div>
+        )}
+        {status === "error" && (
+          <div className="w-full bg-[#111111] border border-[#ef4444] text-[#ef4444] text-sm py-2 rounded-lg text-center">
+            ❌ Failed to send. Please try again.
+          </div>
+        )}
+      </div>
     </div>
   )
 }
@@ -338,12 +343,7 @@ export default function Home() {
       )}
 
       {/* Feedback form */}
-      <div className="mt-8 border-t border-[#1f1f1f] pt-8">
-        <h3 className="text-[#71717a] text-sm text-center mb-4">
-          💬 Share your feedback or feature requests
-        </h3>
-        <FeedbackForm />
-      </div>
+      <FeedbackForm />
     </div>
   </div>
   );
