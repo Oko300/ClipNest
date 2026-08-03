@@ -1,11 +1,19 @@
 "use client"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { DownloadJob } from "../types/index"
 import UrlInput from "../components/UrlInput"
 import JobCard from "../components/JobCard"
 
 export default function Home() {
   const [jobs, setJobs] = useState<DownloadJob[]>([]);
+
+  useEffect(() => {
+    const handleOffline = () => {
+      alert("⚠️ No internet connection detected. Please check your network and try again.");
+    };
+    window.addEventListener("offline", handleOffline);
+    return () => window.removeEventListener("offline", handleOffline);
+  }, []);
 
   const generateId = () => Math.random().toString(36).substring(2, 10);
 
@@ -60,10 +68,14 @@ export default function Home() {
         updateJob(jobId, { fetchStatus: "success", videoInfo: data });
       } else {
         let errorMsg = data.error || "Failed to fetch video info";
-        if (errorMsg.toLowerCase().includes("sign in") || 
-            errorMsg.toLowerCase().includes("bot") ||
-            errorMsg.toLowerCase().includes("youtube")) {
-          errorMsg = "YouTube downloads are temporarily unavailable due to server restrictions. Try TikTok, Instagram, Twitter or Facebook instead.";
+        if (errorMsg.toLowerCase().includes("private")) {
+          errorMsg = "🔒 This video is private. Only the owner can access it.";
+        } else if (errorMsg.toLowerCase().includes("sign in") || errorMsg.toLowerCase().includes("bot")) {
+          errorMsg = "⚠️ YouTube downloads are temporarily unavailable. Try TikTok, Instagram, Twitter or Facebook instead.";
+        } else if (errorMsg.toLowerCase().includes("not exist") || errorMsg.toLowerCase().includes("removed") || errorMsg.toLowerCase().includes("deleted")) {
+          errorMsg = "❌ This video no longer exists or has been removed.";
+        } else if (errorMsg.toLowerCase().includes("region") || errorMsg.toLowerCase().includes("available in your country")) {
+          errorMsg = "🌍 This video is not available in your region.";
         }
         updateJob(jobId, {
           fetchStatus: "error",
@@ -73,7 +85,9 @@ export default function Home() {
     } catch (error) {
       updateJob(jobId, {
         fetchStatus: "error",
-        fetchError: "Network error. Is the backend running?",
+        fetchError: !navigator.onLine 
+          ? "📶 No internet connection. Please check your network and try again."
+          : "Network error. Could not reach the server. Please try again.",
       });
     }
   };
@@ -211,6 +225,22 @@ export default function Home() {
       {/* URL Input */}
       <UrlInput onFetch={addJob} isLoading={false} error="" />
 
+      {/* How it works section */}
+      <div className="grid grid-cols-3 gap-4 text-center">
+        <div className="flex flex-col items-center gap-2">
+          <div className="w-10 h-10 rounded-full bg-[#111111] border border-[#1f1f1f] flex items-center justify-center text-lg">📋</div>
+          <p className="text-[#52525b] text-xs leading-relaxed">Paste any video link from 1000+ sites</p>
+        </div>
+        <div className="flex flex-col items-center gap-2">
+          <div className="w-10 h-10 rounded-full bg-[#111111] border border-[#1f1f1f] flex items-center justify-center text-lg">⚡</div>
+          <p className="text-[#52525b] text-xs leading-relaxed">Choose quality and format</p>
+        </div>
+        <div className="flex flex-col items-center gap-2">
+          <div className="w-10 h-10 rounded-full bg-[#111111] border border-[#1f1f1f] flex items-center justify-center text-lg">✅</div>
+          <p className="text-[#52525b] text-xs leading-relaxed">Download instantly. No watermark, no signup, no ads.</p>
+        </div>
+      </div>
+
       {/* Jobs or Empty State */}
       {jobs.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 gap-4">
@@ -235,6 +265,40 @@ export default function Home() {
           ))}
         </div>
       )}
+
+      {/* Feedback form */}
+      <div className="mt-8 border-t border-[#1f1f1f] pt-8">
+        <h3 className="text-[#71717a] text-sm text-center mb-4">
+          💬 Share your feedback or feature requests
+        </h3>
+        <form
+          action="https://formsubmit.co/nftboy1010@gmail.com"
+          method="POST"
+          className="flex flex-col gap-3"
+        >
+          <input type="hidden" name="_subject" value="ClipNest Feedback" />
+          <input type="hidden" name="_captcha" value="false" />
+          <input type="hidden" name="_template" value="table" />
+          <textarea
+            name="feedback"
+            placeholder="What do you think? What features would you like to see?"
+            rows={3}
+            className="w-full bg-[#111111] border border-[#1f1f1f] rounded-lg px-4 py-3 text-[#f5f5f5] text-sm placeholder-[#3f3f46] resize-none focus:outline-none focus:border-[#6366f1]"
+          />
+          <input
+            type="email"
+            name="email"
+            placeholder="Your email (optional)"
+            className="w-full bg-[#111111] border border-[#1f1f1f] rounded-lg px-4 py-3 text-[#f5f5f5] text-sm placeholder-[#3f3f46] focus:outline-none focus:border-[#6366f1]"
+          />
+          <button
+            type="submit"
+            className="w-full bg-[#6366f1] hover:bg-[#5558e3] text-white text-sm font-medium py-3 rounded-lg transition-colors"
+          >
+            Send Feedback
+          </button>
+        </form>
+      </div>
     </div>
   </div>
   );
