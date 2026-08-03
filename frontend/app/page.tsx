@@ -4,6 +4,77 @@ import { DownloadJob } from "../types/index"
 import UrlInput from "../components/UrlInput"
 import JobCard from "../components/JobCard"
 
+function FeedbackForm() {
+  const [feedback, setFeedback] = useState("")
+  const [email, setEmail] = useState("")
+  const [status, setStatus] = useState<"idle"|"sending"|"sent"|"error">("idle")
+
+  const handleSubmit = async () => {
+    if (!feedback.trim()) return
+    setStatus("sending")
+    try {
+      const res = await fetch("https://formsubmit.co/ajax/nftboy1010@gmail.com", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Accept": "application/json"
+        },
+        body: JSON.stringify({
+          feedback,
+          email: email || "Anonymous",
+          _subject: "ClipNest Feedback",
+        })
+      })
+      if (res.ok) {
+        setStatus("sent")
+        setFeedback("")
+        setEmail("")
+      } else {
+        setStatus("error")
+      }
+    } catch {
+      setStatus("error")
+    }
+  }
+
+  return (
+    <div className="flex flex-col gap-3">
+      <textarea
+        value={feedback}
+        onChange={(e) => setFeedback(e.target.value)}
+        placeholder="What do you think? What features would you like to see?"
+        rows={3}
+        className="w-full bg-[#111111] border border-[#1f1f1f] rounded-lg px-4 py-3 text-[#f5f5f5] text-sm placeholder-[#3f3f46] resize-none focus:outline-none focus:border-[#6366f1]"
+      />
+      <input
+        type="email"
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+        placeholder="Your email (optional)"
+        className="w-full bg-[#111111] border border-[#1f1f1f] rounded-lg px-4 py-3 text-[#f5f5f5] text-sm placeholder-[#3f3f46] focus:outline-none focus:border-[#6366f1]"
+      />
+      {status === "sent" ? (
+        <div className="w-full bg-[#111111] border border-[#22c55e] text-[#22c55e] text-sm font-medium py-3 rounded-lg text-center">
+          ✅ Feedback sent! Thank you.
+        </div>
+      ) : (
+        <button
+          onClick={handleSubmit}
+          disabled={status === "sending"}
+          className="w-full bg-[#6366f1] hover:bg-[#5558e3] disabled:opacity-50 text-white text-sm font-medium py-3 rounded-lg transition-colors"
+        >
+          {status === "sending" ? "Sending..." : "Send Feedback"}
+        </button>
+      )}
+      {status === "error" && (
+        <p className="text-[#ef4444] text-xs text-center">
+          Failed to send. Please try again.
+        </p>
+      )}
+    </div>
+  )
+}
+
 export default function Home() {
   const [jobs, setJobs] = useState<DownloadJob[]>([]);
 
@@ -271,33 +342,7 @@ export default function Home() {
         <h3 className="text-[#71717a] text-sm text-center mb-4">
           💬 Share your feedback or feature requests
         </h3>
-        <form
-          action="https://formsubmit.co/nftboy1010@gmail.com"
-          method="POST"
-          className="flex flex-col gap-3"
-        >
-          <input type="hidden" name="_subject" value="ClipNest Feedback" />
-          <input type="hidden" name="_captcha" value="false" />
-          <input type="hidden" name="_template" value="table" />
-          <textarea
-            name="feedback"
-            placeholder="What do you think? What features would you like to see?"
-            rows={3}
-            className="w-full bg-[#111111] border border-[#1f1f1f] rounded-lg px-4 py-3 text-[#f5f5f5] text-sm placeholder-[#3f3f46] resize-none focus:outline-none focus:border-[#6366f1]"
-          />
-          <input
-            type="email"
-            name="email"
-            placeholder="Your email (optional)"
-            className="w-full bg-[#111111] border border-[#1f1f1f] rounded-lg px-4 py-3 text-[#f5f5f5] text-sm placeholder-[#3f3f46] focus:outline-none focus:border-[#6366f1]"
-          />
-          <button
-            type="submit"
-            className="w-full bg-[#6366f1] hover:bg-[#5558e3] text-white text-sm font-medium py-3 rounded-lg transition-colors"
-          >
-            Send Feedback
-          </button>
-        </form>
+        <FeedbackForm />
       </div>
     </div>
   </div>
