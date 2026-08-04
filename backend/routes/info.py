@@ -97,6 +97,16 @@ class InfoRequest(BaseModel):
 @router.post("/")
 @limiter.limit("10/minute")
 async def get_info(request: Request, body: InfoRequest):
+    youtube_patterns = [
+        "youtube.com", "youtu.be", "m.youtube.com",
+        "youtube-nocookie.com"
+    ]
+    if any(p in body.url.lower() for p in youtube_patterns):
+        from fastapi.responses import JSONResponse
+        return JSONResponse(
+            status_code=400,
+            content={"error": "YouTube is currently unavailable on ClipNest."}
+        )
     if not is_safe_url(body.url):
         raise HTTPException(status_code=400, detail="Invalid or blocked URL.")
     try:

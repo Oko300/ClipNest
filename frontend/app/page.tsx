@@ -4,6 +4,16 @@ import { DownloadJob } from "../types/index"
 import UrlInput from "../components/UrlInput"
 import JobCard from "../components/JobCard"
 
+const isYouTubeUrl = (url: string): boolean => {
+  const ytPatterns = [
+    /youtube\.com/,
+    /youtu\.be/,
+    /m\.youtube\.com/,
+    /youtube-nocookie\.com/,
+  ]
+  return ytPatterns.some(p => p.test(url))
+}
+
 function FeedbackForm() {
   const [feedback, setFeedback] = useState("")
   const [email, setEmail] = useState("")
@@ -84,6 +94,8 @@ export default function Home() {
   const [jobs, setJobs] = useState<DownloadJob[]>([]);
   const [installPrompt, setInstallPrompt] = React.useState<any>(null)
   const [showInstallBanner, setShowInstallBanner] = React.useState(false)
+  const [showYouTubeBlock, setShowYouTubeBlock] = React.useState(false)
+  const [showAlternatives, setShowAlternatives] = React.useState(false)
 
   useEffect(() => {
     const handler = (e: any) => {
@@ -123,6 +135,10 @@ export default function Home() {
 
   const addJob = (url: string) => {
     if (url.trim() === "") return;
+    if (isYouTubeUrl(url.trim())) {
+      setShowYouTubeBlock(true)
+      return
+    }
     if (jobs.some((job) => job.url === url)) return;
 
     const newJob: DownloadJob = {
@@ -338,6 +354,97 @@ export default function Home() {
             <p className="text-[#52525b] text-xs leading-relaxed">Download instantly. No watermark, no signup, no ads.</p>
           </div>
         </div>
+
+{showYouTubeBlock && (
+  <div className="bg-[#111111] border border-[#262626] rounded-xl p-5 flex flex-col gap-3">
+    <div className="flex items-start justify-between gap-3">
+      <div>
+        <p className="text-white text-sm font-semibold">
+          YouTube is currently unavailable
+        </p>
+        <p className="text-[#71717a] text-xs mt-1 leading-relaxed">
+          We have disabled YouTube downloads to keep ClipNest fast,
+          free, and reliable for everyone.
+        </p>
+      </div>
+      <button
+        onClick={() => { setShowYouTubeBlock(false); setShowAlternatives(false); }}
+        className="text-[#52525b] text-xs shrink-0 mt-0.5"
+      >
+        ✕
+      </button>
+    </div>
+    <button
+      onClick={() => setShowAlternatives(!showAlternatives)}
+      className="text-[#6366f1] text-xs text-left hover:underline"
+    >
+      {showAlternatives ? "▲ Hide alternatives" : "▼ Looking for similar long videos? Click here for alternatives →"}
+    </button>
+    {showAlternatives && (
+      <div className="flex flex-col gap-4 pt-2 border-t border-[#1f1f1f]">
+        <p className="text-[#a1a1aa] text-xs leading-relaxed">
+          You can still find many long videos, lectures, documentaries,
+          and independent content on these platforms. They download
+          cleanly in ClipNest — just like TikTok and Instagram.
+        </p>
+        <div className="flex flex-col gap-3">
+          <div className="bg-[#0a0a0a] rounded-lg p-3">
+            <p className="text-white text-xs font-semibold mb-1">
+              🎬 PeerTube — Recommended
+            </p>
+            <p className="text-[#71717a] text-xs leading-relaxed mb-2">
+              Open-source decentralized alternative to YouTube. Many
+              independent servers with lectures, documentaries, and
+              independent content.
+            </p>
+            <p className="text-[#a1a1aa] text-xs font-medium mb-1">
+              Good starting points:
+            </p>
+            <div className="flex flex-col gap-1">
+              {["https://peertube.tv", "https://tilvids.com", "https://makertube.net", "https://framatube.org"].map(url => (
+                <a key={url} href={url} target="_blank" rel="noopener noreferrer"
+                  className="text-[#6366f1] text-xs hover:underline">
+                  {url}
+                </a>
+              ))}
+            </div>
+          </div>
+          <div className="bg-[#0a0a0a] rounded-lg p-3">
+            <p className="text-white text-xs font-semibold mb-1">
+              📺 Odysee
+            </p>
+            <p className="text-[#71717a] text-xs leading-relaxed mb-2">
+              Decentralized video platform with independent and
+              alternative content.
+            </p>
+            <a href="https://odysee.com" target="_blank" rel="noopener noreferrer"
+              className="text-[#6366f1] text-xs hover:underline">
+              https://odysee.com
+            </a>
+          </div>
+          <div className="bg-[#0a0a0a] rounded-lg p-3">
+            <p className="text-white text-xs font-semibold mb-1">
+              🗄️ Internet Archive
+            </p>
+            <p className="text-[#71717a] text-xs leading-relaxed mb-2">
+              Excellent for long-form content — lectures, documentaries,
+              public domain videos, and old films.
+            </p>
+            <a href="https://archive.org" target="_blank" rel="noopener noreferrer"
+              className="text-[#6366f1] text-xs hover:underline">
+              https://archive.org
+            </a>
+          </div>
+        </div>
+        <p className="text-[#52525b] text-xs leading-relaxed">
+          💡 Once you have a link from PeerTube, Odysee, or Internet
+          Archive — paste it into ClipNest the same way you do with
+          TikTok or Instagram.
+        </p>
+      </div>
+    )}
+  </div>
+)}
 
   {showInstallBanner && (
     <div className="flex items-center justify-between bg-[#111111] border border-[#6366f1] rounded-xl px-4 py-3 gap-3">

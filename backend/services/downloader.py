@@ -45,11 +45,6 @@ async def get_video_info(url: str):
         'nocheckcertificate': True,
         'http_headers': COMMON_HEADERS,
         **get_cookies_opts(),
-        'extractor_args': {
-            'youtube': {
-                'player_client': ['android_vr', 'tv_embedded', 'web_embedded', 'mweb']
-            }
-        },
     }
     try:
         loop = asyncio.get_event_loop()
@@ -100,11 +95,6 @@ async def download_video_with_progress(url, quality, fmt, start_time, end_time):
         "nocheckcertificate": True,
         "http_headers": COMMON_HEADERS,
         **get_cookies_opts(),
-        'extractor_args': {
-            'youtube': {
-                'player_client': ['android_vr', 'tv_embedded', 'web_embedded', 'mweb']
-            }
-        },
     }
 
     if fmt in ("mp3", "m4a", "wav") or (isinstance(quality, str) and quality.startswith("Audio")):
