@@ -1,5 +1,6 @@
 "use client"
 import React, { useState, useEffect } from "react"
+import ParticleBackground from "../components/ParticleBackground"
 import { DownloadJob } from "../types/index"
 import UrlInput from "../components/UrlInput"
 import JobCard from "../components/JobCard"
@@ -15,9 +16,10 @@ const isYouTubeUrl = (url: string): boolean => {
 }
 
 function FeedbackForm() {
-  const [feedback, setFeedback] = useState("")
-  const [email, setEmail] = useState("")
-  const [status, setStatus] = useState<"idle"|"sending"|"sent"|"error">("idle")
+  const [open, setOpen] = React.useState(false)
+  const [feedback, setFeedback] = React.useState("")
+  const [email, setEmail] = React.useState("")
+  const [status, setStatus] = React.useState<"idle"|"sending"|"sent"|"error">("idle")
 
   const handleSubmit = async () => {
     if (!feedback.trim()) return
@@ -39,7 +41,10 @@ function FeedbackForm() {
         setStatus("sent")
         setFeedback("")
         setEmail("")
-        setTimeout(() => setStatus("idle"), 5000)
+        setTimeout(() => {
+          setStatus("idle")
+          setOpen(false)
+        }, 3000)
       } else {
         setStatus("error")
       }
@@ -49,43 +54,59 @@ function FeedbackForm() {
   }
 
   return (
-    <div className="mt-8 border-t border-[#1f1f1f] pt-8">
-      <h3 className="text-[#71717a] text-sm text-center mb-4">
-        💬 Share your feedback or feature requests
-      </h3>
-      <div className="flex flex-col gap-3">
-        <textarea
-          value={feedback}
-          onChange={(e) => setFeedback(e.target.value)}
-          placeholder="What do you think? What features would you like to see?"
-          rows={3}
-          className="w-full bg-[#111111] border border-[#1f1f1f] rounded-lg px-4 py-3 text-[#f5f5f5] text-sm placeholder-[#3f3f46] resize-none focus:outline-none focus:border-[#6366f1]"
-        />
-        <input
-          type="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          placeholder="Your email (optional)"
-          className="w-full bg-[#111111] border border-[#1f1f1f] rounded-lg px-4 py-3 text-[#f5f5f5] text-sm placeholder-[#3f3f46] focus:outline-none focus:border-[#6366f1]"
-        />
+    <div className="flex justify-center pt-4 pb-2">
+      {!open ? (
         <button
-          onClick={handleSubmit}
-          disabled={status === "sending"}
-          className="w-full bg-[#6366f1] hover:bg-[#5558e3] disabled:opacity-50 text-white text-sm font-medium py-3 rounded-lg transition-colors"
+          onClick={() => setOpen(true)}
+          className="text-[#3f3f46] hover:text-[#6366f1] text-xs tracking-widest uppercase transition-colors"
         >
-          {status === "sending" ? "Sending..." : "Send Feedback"}
+          Feedback
         </button>
-        {status === "sent" && (
-          <div className="w-full bg-[#111111] border border-[#22c55e] text-[#22c55e] text-sm py-2 rounded-lg text-center">
-            ✅ Feedback sent! Thank you.
+      ) : (
+        <div className="w-full bg-[#111111] border border-[#1f1f1f] rounded-xl p-4 flex flex-col gap-3">
+          <div className="flex items-center justify-between">
+            <p className="text-[#71717a] text-xs">Share your thoughts</p>
+            <button
+              onClick={() => { setOpen(false); setStatus("idle") }}
+              className="text-[#52525b] text-xs hover:text-white"
+            >
+              ✕
+            </button>
           </div>
-        )}
-        {status === "error" && (
-          <div className="w-full bg-[#111111] border border-[#ef4444] text-[#ef4444] text-sm py-2 rounded-lg text-center">
-            ❌ Failed to send. Please try again.
-          </div>
-        )}
-      </div>
+          <textarea
+            value={feedback}
+            onChange={(e) => setFeedback(e.target.value)}
+            placeholder="What do you think? What would you like to see?"
+            rows={3}
+            className="w-full bg-[#0a0a0a] border border-[#1f1f1f] rounded-lg px-3 py-2 text-[#f5f5f5] text-xs placeholder-[#3f3f46] resize-none focus:outline-none focus:border-[#6366f1]"
+          />
+          <input
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="Your email (optional)"
+            className="w-full bg-[#0a0a0a] border border-[#1f1f1f] rounded-lg px-3 py-2 text-[#f5f5f5] text-xs placeholder-[#3f3f46] focus:outline-none focus:border-[#6366f1]"
+          />
+          {status === "sent" ? (
+            <p className="text-[#22c55e] text-xs text-center">
+              ✅ Thank you for your feedback!
+            </p>
+          ) : (
+            <button
+              onClick={handleSubmit}
+              disabled={status === "sending"}
+              className="w-full bg-[#6366f1] hover:bg-[#5558e3] disabled:opacity-50 text-white text-xs font-medium py-2 rounded-lg transition-colors"
+            >
+              {status === "sending" ? "Sending..." : "Send"}
+            </button>
+          )}
+          {status === "error" && (
+            <p className="text-[#ef4444] text-xs text-center">
+              Failed to send. Please try again.
+            </p>
+          )}
+        </div>
+      )}
     </div>
   )
 }
@@ -309,8 +330,9 @@ export default function Home() {
   };
 
   return (
-  <div className="min-h-screen bg-[#0a0a0a]">
-      <div className="max-w-[680px] mx-auto px-4 pt-12 pb-24 flex flex-col gap-6">
+  <div className="min-h-screen bg-[#0a0a0a] relative">
+    <ParticleBackground />
+    <div className="relative z-10 max-w-[680px] mx-auto px-4 pt-12 pb-24 flex flex-col gap-6">
         
         {/* Header */}
         <div className="text-center flex flex-col items-center gap-3">
@@ -355,18 +377,6 @@ export default function Home() {
           </div>
         </div>
 
-        <a
-          href="/movies"
-          className="flex items-center justify-between bg-[#111111] border border-[#1f1f1f] hover:border-[#6366f1] rounded-xl px-4 py-3 transition-colors group"
-        >
-          <div>
-            <p className="text-white text-sm font-medium">🎬 Movie Gallery</p>
-            <p className="text-[#52525b] text-xs mt-0.5">
-              Browse and download free legal public domain films
-            </p>
-          </div>
-          <span className="text-[#6366f1] text-sm">→</span>
-        </a>
 
 {showYouTubeBlock && (
   <div className="bg-[#111111] border border-[#262626] rounded-xl p-4 flex flex-col gap-3">
