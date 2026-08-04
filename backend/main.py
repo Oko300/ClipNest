@@ -58,7 +58,7 @@ async def custom_rate_limit_exception_handler(request: Request, exc: RateLimitEx
     )
 
 # Health Check Endpoint
-@app.get("/health")
+@app.api_route("/health", methods=["GET", "HEAD"])
 async def health_check():
     return {"status": "ok"}
 

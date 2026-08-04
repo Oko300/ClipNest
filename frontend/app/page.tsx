@@ -86,19 +86,13 @@ export default function Home() {
   const [showInstallBanner, setShowInstallBanner] = React.useState(false)
 
   useEffect(() => {
-    const handleOffline = () => {
-      alert("⚠️ No internet connection detected. Please check your network and try again.");
-    };
-    window.addEventListener("offline", handleOffline);
-    return () => window.removeEventListener("offline", handleOffline);
-  }, []);
-
-  useEffect(() => {
-    window.addEventListener("beforeinstallprompt", (e) => {
+    const handler = (e: any) => {
       e.preventDefault()
       setInstallPrompt(e)
       setShowInstallBanner(true)
-    })
+    }
+    window.addEventListener("beforeinstallprompt", handler)
+    return () => window.removeEventListener("beforeinstallprompt", handler)
   }, [])
 
   const handleInstall = async () => {
@@ -107,8 +101,17 @@ export default function Home() {
     const result = await installPrompt.userChoice
     if (result.outcome === "accepted") {
       setShowInstallBanner(false)
+      setInstallPrompt(null)
     }
   }
+
+  useEffect(() => {
+    const handleOffline = () => {
+      alert("⚠️ No internet connection detected. Please check your network and try again.");
+    };
+    window.addEventListener("offline", handleOffline);
+    return () => window.removeEventListener("offline", handleOffline);
+  }, []);
 
   const generateId = () => Math.random().toString(36).substring(2, 10);
 
@@ -336,28 +339,28 @@ export default function Home() {
           </div>
         </div>
 
-        {showInstallBanner && (
-          <div className="flex items-center justify-between bg-[#111111] border border-[#6366f1] rounded-xl px-4 py-3">
-            <div>
-              <p className="text-white text-sm font-medium">Install ClipNest App</p>
-              <p className="text-[#71717a] text-xs">Add to home screen for quick access</p>
-            </div>
-            <div className="flex gap-2">
-              <button
-                onClick={() => setShowInstallBanner(false)}
-                className="text-[#52525b] text-xs px-3 py-1"
-              >
-                Later
-              </button>
-              <button
-                onClick={handleInstall}
-                className="bg-[#6366f1] text-white text-xs px-3 py-2 rounded-lg"
-              >
-                Install
-              </button>
-            </div>
-          </div>
-        )}
+  {showInstallBanner && (
+    <div className="flex items-center justify-between bg-[#111111] border border-[#6366f1] rounded-xl px-4 py-3 gap-3">
+      <div className="flex-1">
+        <p className="text-white text-sm font-medium">📱 Install ClipNest</p>
+        <p className="text-[#71717a] text-xs mt-0.5">Add to home screen for instant access</p>
+      </div>
+      <div className="flex gap-2 shrink-0">
+        <button
+          onClick={() => setShowInstallBanner(false)}
+          className="text-[#52525b] text-xs px-2 py-1"
+        >
+          Later
+        </button>
+        <button
+          onClick={handleInstall}
+          className="bg-[#6366f1] text-white text-xs px-3 py-2 rounded-lg font-medium"
+        >
+          Install
+        </button>
+      </div>
+    </div>
+  )}
 
       {/* Jobs or Empty State */}
       {jobs.length === 0 ? (
