@@ -355,6 +355,19 @@ export default function Home() {
           </div>
         </div>
 
+        <a
+          href="/movies"
+          className="flex items-center justify-between bg-[#111111] border border-[#1f1f1f] hover:border-[#6366f1] rounded-xl px-4 py-3 transition-colors group"
+        >
+          <div>
+            <p className="text-white text-sm font-medium">🎬 Movie Gallery</p>
+            <p className="text-[#52525b] text-xs mt-0.5">
+              Browse & download free legal public domain films
+            </p>
+          </div>
+          <span className="text-[#6366f1] text-sm group-hover:translate-x-1 transition-transform">→</span>
+        </a>
+
 {showYouTubeBlock && (
   <div className="bg-[#111111] border border-[#262626] rounded-xl p-5 flex flex-col gap-3">
     <div className="flex items-start justify-between gap-3">
