@@ -1,4 +1,4 @@
-const CACHE_NAME = "clipnest-v1";
+const CACHE_NAME = "clipnest-v3";
 const urlsToCache = ["/", "/manifest.json"];
 
 self.addEventListener("install", (event) => {
