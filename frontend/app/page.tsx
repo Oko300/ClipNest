@@ -220,7 +220,7 @@ export default function Home() {
     } catch (error) {
       updateJob(jobId, {
         fetchStatus: "error",
-        fetchError: !navigator.onLine 
+        fetchError: !navigator.onLine
           ? "📶 No internet connection. Please check your network and try again."
           : "Network error. Could not reach the server. Please try again.",
       });
@@ -247,7 +247,6 @@ export default function Home() {
     eventSource.onmessage = (event) => {
       console.log("SSE event received:", event.data);
 
-      // Ignore heartbeat comments and empty events
       if (!event.data || event.data.trim() === "") return;
 
       let parsed: any;
@@ -330,10 +329,10 @@ export default function Home() {
   };
 
   return (
-  <div className="min-h-screen bg-[#0a0a0a] relative">
-    <ParticleBackground />
-    <div className="relative z-10 max-w-[680px] mx-auto px-4 pt-12 pb-24 flex flex-col gap-6">
-        
+    <div className="min-h-screen bg-[#0a0a0a] relative overflow-hidden">
+      <ParticleBackground />
+      <div className="relative z-10 max-w-[680px] mx-auto px-4 pt-12 pb-24 flex flex-col gap-6">
+
         {/* Header */}
         <div className="text-center flex flex-col items-center gap-3">
           <div className="flex items-center gap-2">
@@ -361,7 +360,7 @@ export default function Home() {
         {/* URL Input */}
         <UrlInput onFetch={addJob} isLoading={false} error="" />
 
-        {/* How it works section */}
+        {/* How it works */}
         <div className="grid grid-cols-3 gap-2 text-center">
           <div className="flex flex-col items-center gap-2">
             <div className="w-8 h-8 rounded-full bg-[#111111] border border-[#1f1f1f] flex items-center justify-center text-lg">📋</div>
@@ -377,128 +376,129 @@ export default function Home() {
           </div>
         </div>
 
-
-{showYouTubeBlock && (
-  <div className="bg-[#111111] border border-[#262626] rounded-xl p-4 flex flex-col gap-3">
-    <div className="flex items-start justify-between gap-3">
-      <div className="flex-1">
-        <p className="text-white text-sm font-semibold">
-          YouTube is currently unavailable
-        </p>
-        <p className="text-[#71717a] text-xs mt-1 leading-relaxed">
-          We have disabled YouTube downloads to keep ClipNest fast,
-          free, and reliable for everyone.
-        </p>
-      </div>
-      <button
-        onClick={() => { setShowYouTubeBlock(false); setShowAlternatives(false); }}
-        className="text-[#52525b] text-xs shrink-0"
-      >
-        ✕
-      </button>
-    </div>
-    <button
-      onClick={() => setShowAlternatives(!showAlternatives)}
-      className="text-[#6366f1] text-xs text-left hover:underline"
-    >
-      {showAlternatives
-        ? "▲ Hide alternatives"
-        : "▼ Looking for similar long videos? Click here for alternatives →"}
-    </button>
-    {showAlternatives && (
-      <div className="flex flex-col gap-3 pt-2 border-t border-[#1f1f1f]">
-        <p className="text-[#a1a1aa] text-xs leading-relaxed">
-          You can still find many long videos, lectures, documentaries,
-          and independent content on these platforms. They download
-          cleanly in ClipNest — just like TikTok and Instagram.
-        </p>
-        <div className="bg-[#0a0a0a] rounded-lg p-3 flex flex-col gap-1">
-          <p className="text-white text-xs font-semibold">🎬 PeerTube — Recommended</p>
-          <p className="text-[#71717a] text-xs leading-relaxed">
-            Open-source decentralized alternative to YouTube with lectures,
-            documentaries, and independent content.
-          </p>
-          {["https://peertube.tv", "https://tilvids.com", "https://makertube.net", "https://framatube.org"].map(u => (
-            <a key={u} href={u} target="_blank" rel="noopener noreferrer"
-              className="text-[#6366f1] text-xs hover:underline">{u}</a>
-          ))}
-        </div>
-        <div className="bg-[#0a0a0a] rounded-lg p-3 flex flex-col gap-1">
-          <p className="text-white text-xs font-semibold">📺 Odysee</p>
-          <p className="text-[#71717a] text-xs leading-relaxed">
-            Decentralized video platform with independent and alternative content.
-          </p>
-          <a href="https://odysee.com" target="_blank" rel="noopener noreferrer"
-            className="text-[#6366f1] text-xs hover:underline">https://odysee.com</a>
-        </div>
-        <div className="bg-[#0a0a0a] rounded-lg p-3 flex flex-col gap-1">
-          <p className="text-white text-xs font-semibold">🗄️ Internet Archive</p>
-          <p className="text-[#71717a] text-xs leading-relaxed">
-            Excellent for lectures, documentaries, public domain videos and old films.
-          </p>
-          <a href="https://archive.org" target="_blank" rel="noopener noreferrer"
-            className="text-[#6366f1] text-xs hover:underline">https://archive.org</a>
-        </div>
-        <p className="text-[#52525b] text-xs leading-relaxed">
-          💡 Once you have a link from PeerTube, Odysee, or Internet Archive —
-          paste it into ClipNest the same way you do with TikTok or Instagram.
-        </p>
-      </div>
-    )}
-  </div>
-)}
-
-  {showInstallBanner && (
-    <div className="flex items-center justify-between bg-[#111111] border border-[#6366f1] rounded-xl px-4 py-3 gap-3">
-      <div className="flex-1">
-        <p className="text-white text-sm font-medium">📱 Install ClipNest</p>
-        <p className="text-[#71717a] text-xs mt-0.5">Add to home screen for instant access</p>
-      </div>
-      <div className="flex gap-2 shrink-0">
-        <button
-          onClick={() => setShowInstallBanner(false)}
-          className="text-[#52525b] text-xs px-2 py-1"
-        >
-          Later
-        </button>
-        <button
-          onClick={handleInstall}
-          className="bg-[#6366f1] text-white text-xs px-3 py-2 rounded-lg font-medium"
-        >
-          Install
-        </button>
-      </div>
-    </div>
-  )}
-
-      {/* Jobs or Empty State */}
-      {jobs.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-20 gap-4">
-          <div className="w-16 h-16 rounded-2xl bg-[#111111] border border-[#1f1f1f] flex items-center justify-center text-2xl">
-            📋
+        {/* YouTube block */}
+        {showYouTubeBlock && (
+          <div className="bg-[#111111] border border-[#262626] rounded-xl p-4 flex flex-col gap-3">
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex-1">
+                <p className="text-white text-sm font-semibold">
+                  YouTube is currently unavailable
+                </p>
+                <p className="text-[#71717a] text-xs mt-1 leading-relaxed">
+                  We have disabled YouTube downloads to keep ClipNest fast,
+                  free, and reliable for everyone.
+                </p>
+              </div>
+              <button
+                onClick={() => { setShowYouTubeBlock(false); setShowAlternatives(false); }}
+                className="text-[#52525b] text-xs shrink-0"
+              >
+                ✕
+              </button>
+            </div>
+            <button
+              onClick={() => setShowAlternatives(!showAlternatives)}
+              className="text-[#6366f1] text-xs text-left hover:underline"
+            >
+              {showAlternatives
+                ? "▲ Hide alternatives"
+                : "▼ Looking for similar long videos? Click here for alternatives →"}
+            </button>
+            {showAlternatives && (
+              <div className="flex flex-col gap-3 pt-2 border-t border-[#1f1f1f]">
+                <p className="text-[#a1a1aa] text-xs leading-relaxed">
+                  You can still find many long videos, lectures, documentaries,
+                  and independent content on these platforms. They download
+                  cleanly in ClipNest — just like TikTok and Instagram.
+                </p>
+                <div className="bg-[#0a0a0a] rounded-lg p-3 flex flex-col gap-1">
+                  <p className="text-white text-xs font-semibold">🎬 PeerTube — Recommended</p>
+                  <p className="text-[#71717a] text-xs leading-relaxed">
+                    Open-source decentralized alternative to YouTube with lectures,
+                    documentaries, and independent content.
+                  </p>
+                  {["https://peertube.tv", "https://tilvids.com", "https://makertube.net", "https://framatube.org"].map(u => (
+                    <a key={u} href={u} target="_blank" rel="noopener noreferrer"
+                      className="text-[#6366f1] text-xs hover:underline">{u}</a>
+                  ))}
+                </div>
+                <div className="bg-[#0a0a0a] rounded-lg p-3 flex flex-col gap-1">
+                  <p className="text-white text-xs font-semibold">📺 Odysee</p>
+                  <p className="text-[#71717a] text-xs leading-relaxed">
+                    Decentralized video platform with independent and alternative content.
+                  </p>
+                  <a href="https://odysee.com" target="_blank" rel="noopener noreferrer"
+                    className="text-[#6366f1] text-xs hover:underline">https://odysee.com</a>
+                </div>
+                <div className="bg-[#0a0a0a] rounded-lg p-3 flex flex-col gap-1">
+                  <p className="text-white text-xs font-semibold">🗄️ Internet Archive</p>
+                  <p className="text-[#71717a] text-xs leading-relaxed">
+                    Excellent for lectures, documentaries, public domain videos and old films.
+                  </p>
+                  <a href="https://archive.org" target="_blank" rel="noopener noreferrer"
+                    className="text-[#6366f1] text-xs hover:underline">https://archive.org</a>
+                </div>
+                <p className="text-[#52525b] text-xs leading-relaxed">
+                  💡 Once you have a link from PeerTube, Odysee, or Internet Archive —
+                  paste it into ClipNest the same way you do with TikTok or Instagram.
+                </p>
+              </div>
+            )}
           </div>
-          <div className="text-center">
-            <p className="text-[#52525b] text-sm">No downloads yet</p>
-            <p className="text-[#3f3f46] text-xs mt-1">Paste a link above to get started</p>
-          </div>
-        </div>
-      ) : (
-        <div className="flex flex-col gap-4">
-          {jobs.map((job) => (
-            <JobCard
-              key={job.id}
-              job={job}
-              onDownload={() => startDownload(job.id)}
-              onRemove={() => removeJob(job.id)}
-              onUpdateField={(field, value) => updateJobField(job.id, field, value)}
-            />
-          ))}
-        </div>
-      )}
+        )}
 
-      {/* Feedback form */}
-      <FeedbackForm />
+        {/* Install banner */}
+        {showInstallBanner && (
+          <div className="flex items-center justify-between bg-[#111111] border border-[#6366f1] rounded-xl px-4 py-3 gap-3">
+            <div className="flex-1">
+              <p className="text-white text-sm font-medium">📱 Install ClipNest</p>
+              <p className="text-[#71717a] text-xs mt-0.5">Add to home screen for instant access</p>
+            </div>
+            <div className="flex gap-2 shrink-0">
+              <button
+                onClick={() => setShowInstallBanner(false)}
+                className="text-[#52525b] text-xs px-2 py-1"
+              >
+                Later
+              </button>
+              <button
+                onClick={handleInstall}
+                className="bg-[#6366f1] text-white text-xs px-3 py-2 rounded-lg font-medium"
+              >
+                Install
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Jobs or Empty State */}
+        {jobs.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-20 gap-4">
+            <div className="w-16 h-16 rounded-2xl bg-[#111111] border border-[#1f1f1f] flex items-center justify-center text-2xl">
+              📋
+            </div>
+            <div className="text-center">
+              <p className="text-[#52525b] text-sm">No downloads yet</p>
+              <p className="text-[#3f3f46] text-xs mt-1">Paste a link above to get started</p>
+            </div>
+          </div>
+        ) : (
+          <div className="flex flex-col gap-4">
+            {jobs.map((job) => (
+              <JobCard
+                key={job.id}
+                job={job}
+                onDownload={() => startDownload(job.id)}
+                onRemove={() => removeJob(job.id)}
+                onUpdateField={(field, value) => updateJobField(job.id, field, value)}
+              />
+            ))}
+          </div>
+        )}
+
+        {/* Feedback */}
+        <FeedbackForm />
+      </div>
     </div>
-  </div>
   );
 }
