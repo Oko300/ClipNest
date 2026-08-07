@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import SwRegister from "../components/SwRegister";
+import { Analytics } from "@vercel/analytics/react";
 
 export const metadata: Metadata = {
   title: "ClipNest — Download Any Video",
@@ -28,6 +29,7 @@ export default function RootLayout({
         <main className="min-h-screen">
           {children}
         </main>
+        <Analytics />
       </body>
     </html>
   );
