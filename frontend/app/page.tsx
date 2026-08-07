@@ -21,68 +21,181 @@ function AnimatedBackground() {
     let w = canvas.width = window.innerWidth
     let h = canvas.height = window.innerHeight
     let animId: number
+    let t = 0
 
-    const lines: Array<{x: number; y: number; len: number; angle: number; speed: number; opacity: number; width: number}> = []
-    const dots: Array<{x: number; y: number; vx: number; vy: number; opacity: number; size: number}> = []
+    // Stars
+    const stars: Array<{x:number;y:number;r:number;opacity:number;twinkle:number;phase:number}> = []
+    // Slow drifting nebula particles
+    const nebula: Array<{x:number;y:number;vx:number;vy:number;r:number;opacity:number;color:string}> = []
+    // Planets
+    const planets: Array<{x:number;y:number;vx:number;vy:number;r:number;color:string;ringColor:string|null;hasRing:boolean}> = []
 
     const init = () => {
-      lines.length = 0
-      dots.length = 0
-      const lineCount = Math.floor(w * h / 80000)
-      const dotCount = Math.floor(w * h / 20000)
-      for (let i = 0; i < lineCount; i++) {
-        lines.push({
+      stars.length = 0
+      nebula.length = 0
+      planets.length = 0
+
+      // Create stars
+      const starCount = Math.floor(w * h / 1200)
+      for (let i = 0; i < starCount; i++) {
+        stars.push({
           x: Math.random() * w,
           y: Math.random() * h,
-          len: Math.random() * 60 + 20,
-          angle: Math.random() * Math.PI * 2,
-          speed: (Math.random() - 0.5) * 0.003,
-          opacity: Math.random() * 0.08 + 0.02,
-          width: Math.random() * 0.5 + 0.3,
+          r: Math.random() * 1.2 + 0.2,
+          opacity: Math.random() * 0.7 + 0.1,
+          twinkle: Math.random() * 0.015 + 0.003,
+          phase: Math.random() * Math.PI * 2,
         })
       }
-      for (let i = 0; i < dotCount; i++) {
-        dots.push({
+
+      // Create nebula clouds
+      const nebulaCount = Math.floor(w * h / 15000)
+      const nebulaColors = [
+        "rgba(99,102,241,", // indigo
+        "rgba(139,92,246,", // violet
+        "rgba(59,130,246,", // blue
+        "rgba(168,85,247,", // purple
+      ]
+      for (let i = 0; i < nebulaCount; i++) {
+        nebula.push({
           x: Math.random() * w,
           y: Math.random() * h,
-          vx: (Math.random() - 0.5) * 0.12,
-          vy: (Math.random() - 0.5) * 0.12,
-          opacity: Math.random() * 0.2 + 0.05,
-          size: Math.random() * 1 + 0.3,
+          vx: (Math.random() - 0.5) * 0.05,
+          vy: (Math.random() - 0.5) * 0.05,
+          r: Math.random() * 80 + 30,
+          opacity: Math.random() * 0.04 + 0.01,
+          color: nebulaColors[Math.floor(Math.random() * nebulaColors.length)],
+        })
+      }
+
+      // Create 2-4 planets
+      const planetCount = Math.min(4, Math.max(2, Math.floor(w / 400)))
+      const planetColors = [
+        { body: "#c2956c", ring: "#d4a76a" },
+        { body: "#8fa8c8", ring: null },
+        { body: "#b5885a", ring: "#c9965e" },
+        { body: "#7a9e7e", ring: null },
+      ]
+      for (let i = 0; i < planetCount; i++) {
+        const pc = planetColors[i % planetColors.length]
+        const side = Math.random() > 0.5 ? 1 : -1
+        planets.push({
+          x: Math.random() * w,
+          y: Math.random() * h,
+          vx: side * (Math.random() * 0.08 + 0.03),
+          vy: (Math.random() - 0.5) * 0.04,
+          r: Math.random() * 18 + 10,
+          color: pc.body,
+          ringColor: pc.ring,
+          hasRing: pc.ring !== null,
         })
       }
     }
 
+    const drawPlanet = (p: typeof planets[0]) => {
+      // Planet body with gradient
+      const grad = ctx.createRadialGradient(
+        p.x - p.r * 0.3, p.y - p.r * 0.3, p.r * 0.1,
+        p.x, p.y, p.r
+      )
+      grad.addColorStop(0, lighten(p.color, 40))
+      grad.addColorStop(0.5, p.color)
+      grad.addColorStop(1, darken(p.color, 40))
+      ctx.beginPath()
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2)
+      ctx.fillStyle = grad
+      ctx.globalAlpha = 0.55
+      ctx.fill()
+      ctx.globalAlpha = 1
+
+      // Ring if applicable
+      if (p.hasRing && p.ringColor) {
+        ctx.save()
+        ctx.translate(p.x, p.y)
+        ctx.scale(1, 0.3)
+        ctx.beginPath()
+        ctx.ellipse(0, 0, p.r * 1.8, p.r * 1.8, 0, 0, Math.PI * 2)
+        ctx.strokeStyle = p.ringColor
+        ctx.lineWidth = p.r * 0.25
+        ctx.globalAlpha = 0.2
+        ctx.stroke()
+        ctx.globalAlpha = 1
+        ctx.restore()
+      }
+
+      // Subtle atmosphere glow
+      const glow = ctx.createRadialGradient(p.x, p.y, p.r * 0.8, p.x, p.y, p.r * 1.4)
+      glow.addColorStop(0, "rgba(150,170,255,0.0)")
+      glow.addColorStop(1, "rgba(150,170,255,0.0)")
+      ctx.beginPath()
+      ctx.arc(p.x, p.y, p.r * 1.4, 0, Math.PI * 2)
+      ctx.fillStyle = glow
+      ctx.fill()
+    }
+
+    const lighten = (hex: string, amount: number) => {
+      const num = parseInt(hex.slice(1), 16)
+      const r = Math.min(255, (num >> 16) + amount)
+      const g = Math.min(255, ((num >> 8) & 0xff) + amount)
+      const b = Math.min(255, (num & 0xff) + amount)
+      return `rgb(${r},${g},${b})`
+    }
+
+    const darken = (hex: string, amount: number) => {
+      const num = parseInt(hex.slice(1), 16)
+      const r = Math.max(0, (num >> 16) - amount)
+      const g = Math.max(0, ((num >> 8) & 0xff) - amount)
+      const b = Math.max(0, (num & 0xff) - amount)
+      return `rgb(${r},${g},${b})`
+    }
+
     const draw = () => {
       ctx.clearRect(0, 0, w, h)
-      lines.forEach(l => {
-        l.angle += l.speed
-        const x2 = l.x + Math.cos(l.angle) * l.len
-        const y2 = l.y + Math.sin(l.angle) * l.len
+      t += 0.008
+
+      // Draw nebula clouds
+      nebula.forEach(n => {
+        n.x += n.vx
+        n.y += n.vy
+        if (n.x < -n.r) n.x = w + n.r
+        if (n.x > w + n.r) n.x = -n.r
+        if (n.y < -n.r) n.y = h + n.r
+        if (n.y > h + n.r) n.y = -n.r
+        const grad = ctx.createRadialGradient(n.x, n.y, 0, n.x, n.y, n.r)
+        grad.addColorStop(0, n.color + n.opacity + ")")
+        grad.addColorStop(1, n.color + "0)")
         ctx.beginPath()
-        ctx.moveTo(l.x, l.y)
-        ctx.lineTo(x2, y2)
-        ctx.strokeStyle = `rgba(99,102,241,${l.opacity})`
-        ctx.lineWidth = l.width
-        ctx.stroke()
-      })
-      dots.forEach(d => {
-        d.x += d.vx
-        d.y += d.vy
-        if (d.x < 0) d.x = w
-        if (d.x > w) d.x = 0
-        if (d.y < 0) d.y = h
-        if (d.y > h) d.y = 0
-        ctx.beginPath()
-        ctx.arc(d.x, d.y, d.size, 0, Math.PI * 2)
-        ctx.fillStyle = `rgba(255,255,255,${d.opacity})`
+        ctx.arc(n.x, n.y, n.r, 0, Math.PI * 2)
+        ctx.fillStyle = grad
         ctx.fill()
       })
+
+      // Draw stars with twinkling
+      stars.forEach(s => {
+        const twinkleOpacity = s.opacity * (0.6 + 0.4 * Math.sin(t * s.twinkle * 80 + s.phase))
+        ctx.beginPath()
+        ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2)
+        ctx.fillStyle = `rgba(255,255,255,${twinkleOpacity})`
+        ctx.fill()
+      })
+
+      // Draw planets
+      planets.forEach(p => {
+        p.x += p.vx
+        p.y += p.vy
+        if (p.x < -p.r * 3) p.x = w + p.r * 3
+        if (p.x > w + p.r * 3) p.x = -p.r * 3
+        if (p.y < -p.r * 3) p.y = h + p.r * 3
+        if (p.y > h + p.r * 3) p.y = -p.r * 3
+        drawPlanet(p)
+      })
+
       animId = requestAnimationFrame(draw)
     }
 
     init()
     draw()
+
     const onResize = () => {
       w = canvas.width = window.innerWidth
       h = canvas.height = window.innerHeight
