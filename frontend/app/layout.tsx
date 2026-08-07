@@ -25,7 +25,7 @@ export default function RootLayout({
       </head>
       <body>
         <SwRegister />
-        <main className="min-h-screen bg-[#0a0a0a]">
+        <main className="min-h-screen">
           {children}
         </main>
       </body>

@@ -505,7 +505,7 @@ export default function Home() {
           {jobs.length === 0 ? (
             <div className="w-full flex flex-col items-center gap-6 py-8">
               {/* How it works */}
-              <div className="w-full grid grid-cols-3 gap-3">
+              <div className="w-full grid grid-cols-1 md:grid-cols-3 gap-3">
                 {[
                   { step: "01", title: "Paste link", desc: "Any video URL from 1000+ platforms" },
                   { step: "02", title: "Choose format", desc: "Select quality, format or audio only" },
