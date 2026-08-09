@@ -5,8 +5,6 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from dependencies import limiter
 from services.downloader import get_video_info
-import ipaddress
-from urllib.parse import urlparse
 
 router = APIRouter()
 

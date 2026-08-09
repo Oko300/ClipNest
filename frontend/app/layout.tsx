@@ -1,7 +1,7 @@
+import { Analytics } from "@vercel/analytics/next"
 import type { Metadata } from "next";
 import "./globals.css";
 import SwRegister from "../components/SwRegister";
-import { Analytics } from "@vercel/analytics/react";
 
 export const metadata: Metadata = {
   title: "ClipNest — Download Any Video",
