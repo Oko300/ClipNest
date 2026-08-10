@@ -3,10 +3,27 @@ import type { Metadata } from "next";
 import "./globals.css";
 import SwRegister from "../components/SwRegister";
 
-export const metadata: Metadata = {
-  title: "ClipNest — Download Any Video",
-  description: "Paste any video link. Get the file. No ads, no signup.",
-};
+export const metadata = {
+  title: "ClipNest — Free Video Downloader",
+  description: "Download videos from TikTok, Instagram, Twitter, Facebook and 1000+ platforms. Free, no signup, no watermark, no ads.",
+  keywords: "video downloader, TikTok downloader, Instagram downloader, Twitter video download, Facebook video download, free video downloader, no watermark, mp4 downloader, mp3 downloader",
+  openGraph: {
+    title: "ClipNest — Free Video Downloader",
+    description: "Download videos from TikTok, Instagram, Twitter, Facebook and 1000+ platforms. Free, no signup, no watermark.",
+    url: "https://clip-nest-ten.vercel.app",
+    siteName: "ClipNest",
+    type: "website",
+  },
+  twitter: {
+    card: "summary",
+    title: "ClipNest — Free Video Downloader",
+    description: "Free video downloader. No signup, no watermark, no ads.",
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
+}
 
 export default function RootLayout({
   children,
