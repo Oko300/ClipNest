@@ -539,15 +539,8 @@ export default function Home() {
             </div>
           )}
 
-                    <div className="w-full flex flex-col items-center gap-6 py-8 text-center text-[#52525b] text-sm leading-relaxed max-w-2xl mx-auto">
-            <h2 className="text-white text-xl font-bold mb-4">How ClipNest Works</h2>
-            <p>ClipNest is a simple, fast, and free tool designed to help you download videos from a vast array of platforms. Our goal is to provide an easy-to-use solution for saving your favorite online content for offline viewing, archiving, or creative projects.</p>
-            <p>We support over 1000+ platforms, including major video-sharing sites and many niche platforms. Simply paste the video link, choose your desired format and quality, and download. No watermarks, no hidden fees, and no complicated software installations required.</p>
-            <p>Our service respects content creators' rights and encourages users to download content responsibly, adhering to copyright laws and platform terms of service.</p>
-            <p className="mt-8 text-white">
-              <a href="mailto:support@clipnest.com" className="text-[#6366f1] hover:underline">Click to send a feedback</a>
-            </p>
-          </div>
+        <FeedbackForm />
+
         </main>
 
         {/* Footer */}
