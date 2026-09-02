@@ -65,6 +65,13 @@ export default function JobCard({ job, onDownload, onRemove, onUpdateField }: Pr
               filename={job.outputFilename}
             />
           )}
+          {job.downloadState === "error" && job.downloadError && (
+            <div className="px-4 pb-3 flex items-center gap-2">
+              <p className="text-[#ef4444] text-xs flex-1 leading-relaxed">
+                {job.downloadError}
+              </p>
+            </div>
+          )}
         </>
       )}
     </div>

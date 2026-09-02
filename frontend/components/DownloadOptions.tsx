@@ -112,9 +112,13 @@ export default function DownloadOptions({ formats, selectedQuality, selectedForm
         onClick={onDownload}
         disabled={downloadState === "downloading"}
         className={`w-full py-3 rounded-xl text-sm font-semibold border-none transition-colors
-          ${downloadState === "downloading" ? 'bg-[#1f1f1f] text-[#52525b] cursor-not-allowed' :
-            downloadState === "done" ? 'bg-[#22c55e] text-white cursor-pointer' :
-            'bg-[#6366f1] text-white cursor-pointer'}`}
+          ${downloadState === "downloading"
+            ? 'bg-[#1f1f1f] text-[#52525b] cursor-not-allowed'
+            : downloadState === "done"
+            ? 'bg-[#22c55e] text-white cursor-pointer'
+            : downloadState === "error"
+            ? 'bg-[#ef4444] hover:bg-[#dc2626] text-white cursor-pointer'
+            : 'bg-[#6366f1] hover:bg-[#5558e3] text-white cursor-pointer'}`}
       >
         {downloadState === "idle" && "Download"}
         {downloadState === "downloading" && "Downloading..."}

@@ -360,7 +360,15 @@ export default function Home() {
   const startDownload = (jobId: string) => {
     const job = jobs.find(j => j.id === jobId)
     if (!job) return
-    updateJob(jobId, { downloadState: "downloading", progress: 0, speed: "", eta: "", downloadError: "" })
+    updateJob(jobId, {
+      downloadState: "downloading",
+      progress: 0,
+      speed: "",
+      eta: "",
+      downloadError: "",
+      outputFilename: "",
+      fileId: "",
+    })
     const sseUrl = `${process.env.NEXT_PUBLIC_API_URL}/api/download/stream?url=${encodeURIComponent(job.url)}&quality=${job.selectedQuality}&format_type=${job.selectedFormat}${job.startTime ? `&start_time=${job.startTime}` : ""}${job.endTime ? `&end_time=${job.endTime}` : ""}`
     const eventSource = new EventSource(sseUrl)
     eventSource.onmessage = (event) => {
@@ -386,12 +394,18 @@ export default function Home() {
           window.open(`${process.env.NEXT_PUBLIC_API_URL}/api/download/file/${parsed.file_id}`, "_blank")
         }
       } else if (parsed.status === "error") {
-        updateJob(jobId, { downloadState: "error", downloadError: parsed.message })
+        updateJob(jobId, {
+          downloadState: "error",
+          downloadError: parsed.message || "Download failed. Tap Retry to try again.",
+        })
         eventSource.close()
       }
     }
     eventSource.onerror = () => {
-      updateJob(jobId, { downloadState: "error", downloadError: "Connection lost. Please try again." })
+      updateJob(jobId, {
+        downloadState: "error",
+        downloadError: "Connection lost or download failed. Tap Retry to try again.",
+      })
       eventSource.close()
     }
   }
