@@ -95,6 +95,9 @@ async def download_video_with_progress(url, quality, fmt, start_time, end_time):
         "nocheckcertificate": True,
         "http_headers": COMMON_HEADERS,
         **get_cookies_opts(),
+        "postprocessor_args": {
+            "ffmpeg": ["-c:a", "aac", "-b:a", "192k"]
+        },
     }
 
     if fmt in ("mp3", "m4a", "wav") or (isinstance(quality, str) and quality.startswith("Audio")):
@@ -119,12 +122,21 @@ async def download_video_with_progress(url, quality, fmt, start_time, end_time):
     else:
         height = str(quality).replace("p", "")
         ydl_opts["format"] = (
-            f"bestvideo[height<={height}]+bestaudio"
+            f"bestvideo[height<={height}][ext=mp4]+bestaudio[ext=m4a]"
+            f"/bestvideo[height<={height}][ext=mp4]+bestaudio"
+            f"/bestvideo[height<={height}]+bestaudio[ext=m4a]"
+            f"/bestvideo[height<={height}]+bestaudio"
+            f"/best[height<={height}][ext=mp4]"
             f"/best[height<={height}]"
             f"/best"
         )
         ydl_opts["merge_output_format"] = "mp4"
+        ydl_opts["prefer_ffmpeg"] = True
         ydl_opts["postprocessors"] = [
+            {
+                "key": "FFmpegVideoConvertor",
+                "preferedformat": "mp4",
+            },
             {
                 "key": "FFmpegMetadata",
                 "add_metadata": False,
