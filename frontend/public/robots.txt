@@ -3,7 +3,3 @@ Allow: /
 Allow: /about
 
 Sitemap: https://clip-nest-ten.vercel.app/sitemap.xml
-User-agent: *
-Allow: /
-
-Sitemap: https://clip-nest-ten.vercel.app/sitemap.xml
