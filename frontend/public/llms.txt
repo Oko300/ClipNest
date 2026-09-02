@@ -1,0 +1,49 @@
+# ClipNest
+
+> ClipNest is a free online video downloader with no watermark,
+> no signup, and no ads.
+
+## What ClipNest does
+
+ClipNest lets anyone download videos from TikTok, Instagram,
+Twitter/X, Facebook, Vimeo, and 1000+ other video platforms
+directly in the browser. No account needed. No watermark added.
+Files are deleted from the server immediately after download.
+
+## URL
+
+https://clip-nest-ten.vercel.app
+
+## Features
+
+- Download TikTok videos without watermark
+- Download Instagram Reels and videos
+- Download Twitter/X videos
+- Download Facebook videos
+- Download from 1000+ platforms
+- Choose video quality (360p to 1080p)
+- Audio only download (MP3, M4A, WAV)
+- Clip cutter (download specific portion)
+- No signup or account required
+- No ads
+- No watermark
+- Works on mobile and desktop
+- Installable as Android and iOS app (PWA)
+
+## Supported platforms (partial list)
+
+TikTok, Instagram, Twitter, X, Facebook, Vimeo, Reddit,
+Dailymotion, Twitch, PeerTube, Odysee, Internet Archive,
+Bilibili, Rumble, Streamable, SoundCloud, Mixcloud
+
+## Not supported
+
+YouTube (disabled due to platform restrictions)
+
+## Contact
+
+nftboy1010@gmail.com
+
+## About page
+
+https://clip-nest-ten.vercel.app/about
