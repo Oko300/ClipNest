@@ -76,6 +76,24 @@ async def download_video_with_progress(url, quality, fmt, start_time, end_time):
     folder = f"/tmp/{file_id}"
     os.makedirs(folder, exist_ok=True)
 
+    # Register download start time for 2-day retention
+    try:
+        import json, time
+        registry_path = "/tmp/download_registry.json"
+        registry = {}
+        if os.path.exists(registry_path):
+            with open(registry_path, "r") as f:
+                registry = json.load(f)
+        registry[file_id] = {
+            "folder": folder,
+            "created_at": time.time(),
+            "status": "downloading",
+        }
+        with open(registry_path, "w") as f:
+            json.dump(registry, f)
+    except Exception:
+        pass
+
     ydl_opts = {
         "outtmpl": f"{folder}/%(title)s.%(ext)s",
         "quiet": True,
