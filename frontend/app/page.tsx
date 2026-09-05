@@ -16,7 +16,8 @@ function AnimatedBackground() {
     if (!canvas) return
     const ctx = canvas.getContext("2d")
     if (!ctx) return
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return
+    const prefersReduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    const particleMultiplier = prefersReduced ? 0.3 : 1
 
     let w = canvas.width = window.innerWidth
     let h = canvas.height = window.innerHeight
@@ -36,7 +37,7 @@ function AnimatedBackground() {
       planets.length = 0
 
       // Create stars
-      const starCount = Math.floor(w * h / 1200)
+      const starCount = Math.floor((w * h / 1200) * particleMultiplier)
       for (let i = 0; i < starCount; i++) {
         stars.push({
           x: Math.random() * w,
@@ -49,7 +50,7 @@ function AnimatedBackground() {
       }
 
       // Create nebula clouds
-      const nebulaCount = Math.floor(w * h / 15000)
+      const nebulaCount = Math.floor((w * h / 15000) * particleMultiplier)
       const nebulaColors = [
         "rgba(99,102,241,", // indigo
         "rgba(139,92,246,", // violet
@@ -69,7 +70,7 @@ function AnimatedBackground() {
       }
 
       // Create 2-4 planets
-      const planetCount = Math.min(4, Math.max(2, Math.floor(w / 400)))
+      const planetCount = prefersReduced ? 1 : Math.min(4, Math.max(2, Math.floor(w / 400)))
       const planetColors = [
         { body: "#c2956c", ring: "#d4a76a" },
         { body: "#8fa8c8", ring: null },
@@ -153,6 +154,16 @@ function AnimatedBackground() {
       ctx.clearRect(0, 0, w, h)
       t += 0.008
 
+      // Milky Way band
+      const milkyWay = ctx.createLinearGradient(0, h * 0.2, w, h * 0.8)
+      milkyWay.addColorStop(0, "rgba(99,102,241,0)")
+      milkyWay.addColorStop(0.3, "rgba(99,102,241,0.018)")
+      milkyWay.addColorStop(0.5, "rgba(139,92,246,0.025)")
+      milkyWay.addColorStop(0.7, "rgba(99,102,241,0.018)")
+      milkyWay.addColorStop(1, "rgba(99,102,241,0)")
+      ctx.fillStyle = milkyWay
+      ctx.fillRect(0, 0, w, h)
+
       // Draw nebula clouds
       nebula.forEach(n => {
         n.x += n.vx
@@ -173,6 +184,19 @@ function AnimatedBackground() {
       // Draw stars with twinkling
       stars.forEach(s => {
         const twinkleOpacity = s.opacity * (0.6 + 0.4 * Math.sin(t * s.twinkle * 80 + s.phase))
+
+        // Draw star glow for larger stars
+        if (s.r > 0.8) {
+          const glow = ctx.createRadialGradient(s.x, s.y, 0, s.x, s.y, s.r * 3)
+          glow.addColorStop(0, `rgba(255,255,255,${twinkleOpacity * 0.4})`)
+          glow.addColorStop(1, "rgba(255,255,255,0)")
+          ctx.beginPath()
+          ctx.arc(s.x, s.y, s.r * 3, 0, Math.PI * 2)
+          ctx.fillStyle = glow
+          ctx.fill()
+        }
+
+        // Draw star core
         ctx.beginPath()
         ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2)
         ctx.fillStyle = `rgba(255,255,255,${twinkleOpacity})`
@@ -199,6 +223,8 @@ function AnimatedBackground() {
     const onResize = () => {
       w = canvas.width = window.innerWidth
       h = canvas.height = window.innerHeight
+      canvas.style.width = window.innerWidth + "px"
+      canvas.style.height = window.innerHeight + "px"
       init()
     }
     window.addEventListener("resize", onResize)
@@ -206,11 +232,19 @@ function AnimatedBackground() {
   }, [])
 
   return (
-    <canvas ref={canvasRef} style={{
-      position: "fixed", top: 0, left: 0,
-      width: "100%", height: "100%",
-      pointerEvents: "none", zIndex: 0,
-    }} />
+    <canvas
+      ref={canvasRef}
+      style={{
+        position: "fixed",
+        top: 0,
+        left: 0,
+        width: "100vw",
+        height: "100vh",
+        pointerEvents: "none",
+        zIndex: 0,
+        opacity: 1,
+      }}
+    />
   )
 }
 

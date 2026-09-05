@@ -1,12 +1,15 @@
 {
   "name": "ClipNest",
   "short_name": "ClipNest",
-  "description": "Download videos from TikTok, Instagram, Twitter, Facebook and 1000+ sites. No ads, no signup.",
+  "description": "Download videos from TikTok, Instagram, Twitter, Facebook and 1000+ platforms. No watermark, no signup, no ads.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#0a0a0a",
+  "background_color": "#080808",
   "theme_color": "#6366f1",
-  "orientation": "portrait",
+  "orientation": "portrait-primary",
+  "scope": "/",
+  "lang": "en",
+  "categories": ["utilities", "productivity"],
   "icons": [
     {
       "src": "/icons/icon-192.png",
@@ -19,6 +22,27 @@
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "any"
     }
-  ]
+  ],
+  "screenshots": [
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "form_factor": "narrow"
+    }
+  ],
+  "share_target": {
+    "action": "/",
+    "method": "GET",
+    "params": {
+      "url": "url"
+    }
+  }
 }
