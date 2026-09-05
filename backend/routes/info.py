@@ -100,7 +100,6 @@ async def get_info(request: Request, body: InfoRequest):
         "youtube-nocookie.com"
     ]
     if any(p in body.url.lower() for p in youtube_patterns):
-        from fastapi.responses import JSONResponse
         return JSONResponse(
             status_code=400,
             content={"error": "YouTube is currently unavailable on ClipNest."}

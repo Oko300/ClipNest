@@ -37,7 +37,7 @@ logging.getLogger("uvicorn.access").setLevel(logging.WARNING)
 # CORS Middleware
 ALLOWED_ORIGINS = os.getenv(
     "ALLOWED_ORIGINS",
-    "http://localhost:3000,http://localhost:3003,https://clipnest.vercel.app,https://clipnest-backend-mrtq.onrender.com"
+    "http://localhost:3000,http://localhost:3003,https://clip-nest-ten.vercel.app,https://clipnest.vercel.app,https://clipnest-backend-mrtq.onrender.com"
 ).split(",")
 
 app.add_middleware(
@@ -63,6 +63,4 @@ async def health_check():
 
 # Include Routers
 app.include_router(info.router, prefix="/api/info", tags=["info"])
-
-from routes.download import router as download_router
 app.include_router(download_router, prefix="/api/download", tags=["download"])

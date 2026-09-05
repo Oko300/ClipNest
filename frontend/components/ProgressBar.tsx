@@ -5,7 +5,7 @@ function stripAnsi(str: string): string {
 }
 
 interface Props {
-  progress: number
+  progress: number | string
   speed: string
   eta: string
   downloadState: "idle" | "downloading" | "done" | "error"
@@ -13,6 +13,10 @@ interface Props {
 }
 
 export default function ProgressBar({ progress, speed, eta, downloadState, filename }: Props) {
+  // Tolerate either a number (normal path) or a string like "50" / "50%".
+  const pct = typeof progress === "number"
+    ? progress
+    : parseFloat(String(progress).replace("%", "")) || 0
   return (
     <div className="px-4 pb-4 flex flex-col gap-2">
       <div className="flex justify-between items-center">
@@ -22,13 +26,13 @@ export default function ProgressBar({ progress, speed, eta, downloadState, filen
             : `${stripAnsi(speed) || "Starting..."}${stripAnsi(eta) ? ` · ${stripAnsi(eta)} left` : ""}`}
         </span>
         <span className={`text-xs font-semibold tabular-nums ${downloadState === "done" ? "text-[#22c55e]" : "text-[#f5f5f5]"}`}>
-          {progress.toFixed(0)}%
+          {pct.toFixed(0)}%
         </span>
       </div>
       <div className="w-full bg-[#1f1f1f] rounded-full h-1.5">
         <div
           className={`h-1.5 rounded-full transition-all duration-300 ${downloadState === "done" ? "bg-[#22c55e]" : "bg-[#6366f1]"}`}
-          style={{ width: `${progress}%` }}
+          style={{ width: `${pct}%` }}
         />
       </div>
     </div>

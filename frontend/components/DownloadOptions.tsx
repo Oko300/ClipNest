@@ -18,7 +18,9 @@ interface Props {
 
 export default function DownloadOptions({ formats, selectedQuality, selectedFormat, startTime, endTime, onQualityChange, onFormatChange, onStartTimeChange, onEndTimeChange, onDownload, downloadState }: Props) {
   const [showAdvanced, setShowAdvanced] = useState(false)
-  const videoFormats = formats.filter(f => f.quality !== "Audio only")
+  // Backend labels audio options as "Audio — MP3/M4A/WAV"; keep only real
+  // video resolutions out of the MP4 quality picker.
+  const videoFormats = formats.filter(f => !f.quality.startsWith("Audio"))
 
   return (
     <div className="p-4 flex flex-col gap-4">

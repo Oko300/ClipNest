@@ -113,9 +113,6 @@ async def download_video_with_progress(url, quality, fmt, start_time, end_time):
         "nocheckcertificate": True,
         "http_headers": COMMON_HEADERS,
         **get_cookies_opts(),
-        "postprocessor_args": {
-            "ffmpeg": ["-c:a", "aac", "-b:a", "192k"]
-        },
     }
 
     if fmt in ("mp3", "m4a", "wav") or (isinstance(quality, str) and quality.startswith("Audio")):
@@ -160,6 +157,13 @@ async def download_video_with_progress(url, quality, fmt, start_time, end_time):
                 "add_metadata": False,
             }
         ]
+        # Re-encode audio to AAC ONLY for merged MP4 output, so audio streams
+        # like opus/webm (which can't be copied into an mp4 container) stay
+        # playable. Scoped to the video branch so it never overrides the audio
+        # extractor's codec (mp3/wav) in the audio branch above.
+        ydl_opts["postprocessor_args"] = {
+            "ffmpeg": ["-c:a", "aac", "-b:a", "192k"]
+        }
 
     if start_time and end_time:
         ydl_opts["download_sections"] = [f"*{start_time}-{end_time}"]
