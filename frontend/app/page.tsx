@@ -1,5 +1,6 @@
 "use client"
-import React, { useState, useEffect, useRef } from "react"
+import React, { useState, useEffect, useRef, Suspense } from "react"
+import { useSearchParams } from "next/navigation"
 import { DownloadJob } from "../types/index"
 import UrlInput from "../components/UrlInput"
 import JobCard from "../components/JobCard"
@@ -314,6 +315,21 @@ function FeedbackForm() {
   )
 }
 
+function ShareTargetHandler({ onUrl }: { onUrl: (url: string) => void }) {
+  const searchParams = useSearchParams()
+
+  useEffect(() => {
+    const sharedUrl = searchParams.get("url")
+    if (sharedUrl && sharedUrl.startsWith("http")) {
+      onUrl(sharedUrl)
+      // Clean the URL so refreshing doesn't re-trigger
+      window.history.replaceState({}, "", "/")
+    }
+  }, [searchParams, onUrl])
+
+  return null
+}
+
 export default function Home() {
   const [jobs, setJobs] = useState<DownloadJob[]>([])
   const [installPrompt, setInstallPrompt] = React.useState<any>(null)
@@ -358,6 +374,10 @@ export default function Home() {
     setJobs(prev => [newJob, ...prev])
     fetchJobInfo(newJob.id, url)
   }
+
+  const handleSharedUrl = React.useCallback((url: string) => {
+    addJob(url)
+  }, [jobs])
 
   const fetchJobInfo = async (jobId: string, url: string) => {
     try {
@@ -483,6 +503,9 @@ export default function Home() {
 
         {/* Hero */}
         <main className="flex-1 flex flex-col items-center justify-start px-4 pt-12 pb-24 max-w-2xl mx-auto w-full gap-8">
+          <Suspense fallback={null}>
+            <ShareTargetHandler onUrl={handleSharedUrl} />
+          </Suspense>
 
           {/* Hero text */}
           <div className="text-center flex flex-col gap-4">
