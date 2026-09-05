@@ -8,7 +8,8 @@
 ClipNest lets anyone download videos from TikTok, Instagram,
 Twitter/X, Facebook, Vimeo, and 1000+ other video platforms
 directly in the browser. No account needed. No watermark added.
-Files are deleted from the server immediately after download.
+Files are kept on the server only temporarily (up to 2 days) so
+interrupted downloads can be resumed, then automatically deleted.
 
 ## URL
 

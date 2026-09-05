@@ -58,7 +58,7 @@ export default function AboutPage() {
             </li>
             <li className="flex gap-3">
               <span className="text-[#6366f1] font-mono text-xs mt-0.5">04</span>
-              <span>The file is saved directly to your device. No watermark is added. The file is deleted from ClipNest servers immediately after download.</span>
+              <span>The file is saved directly to your device. No watermark is added. Files are held on ClipNest servers only temporarily — up to 2 days — so an interrupted download can be resumed, then automatically deleted.</span>
             </li>
           </ol>
         </section>
@@ -132,11 +132,11 @@ export default function AboutPage() {
           <h2 className="text-white text-lg font-semibold">Privacy</h2>
           <p className="text-[#a1a1aa] text-sm leading-relaxed">
             ClipNest does not store any downloaded videos long-term. Files are
-            temporarily processed on the server and immediately deleted after
-            the download is delivered to the user — within 30 seconds of completion.
-            ClipNest does not collect personal data, does not require login,
-            and does not track individual user downloads. IP addresses are hidden
-            from server logs.
+            processed on the server and kept only temporarily — for up to 2 days —
+            so that an interrupted download can be resumed, after which they are
+            automatically deleted. ClipNest does not collect personal data, does
+            not require login, and does not track individual user downloads.
+            IP addresses are hidden from server logs.
           </p>
         </section>
 
