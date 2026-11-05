@@ -76,7 +76,13 @@ def sanitize_error(raw: str) -> str:
         return "Access denied by the platform. Try a different video or wait a few minutes."
     if "status code 0" in msg or "video not available" in msg:
         return "Could not reach the platform. Please try again in a moment."
-    return "Could not fetch video info. Please check the link and try again."
+    if "requested format is not available" in msg or "format is not available" in msg:
+        return "That quality is not available. Try a different quality or Audio only."
+    if "no video formats" in msg or "no formats" in msg:
+        return "No downloadable formats found for this video."
+    # Last resort: return a shortened version of the real error so we can diagnose
+    short = raw.strip().split("\n")[0][:180]
+    return short if short else "Download failed. Please try again."
 
 
 def _detect_platform(url: str) -> str:
@@ -202,17 +208,19 @@ async def download_video_with_progress(url, quality, fmt, start_time, end_time):
             {"key": "FFmpegMetadata", "add_metadata": False},
         ]
     else:
-        height = str(quality).replace("p", "")
-        # TikTok / X often serve progressive (single-file) streams.
-        # Prefer progressive best within height, then fall back to merged, then any best.
-        ydl_opts["format"] = (
-            f"best[height<={height}][ext=mp4]/best[height<={height}]"
-            f"/bestvideo[height<={height}]+bestaudio/best"
-            f"/best"
-        )
+        height = str(quality).replace("p", "").strip()
+        # Always provide a pure /best fallback. TikTok & X mostly use progressive MP4s.
+        # If height is not a plain integer (e.g. "1024" from odd labels) skip the height filter.
+        if height.isdigit():
+            ydl_opts["format"] = (
+                f"best[height<={height}][ext=mp4]/best[height<={height}]"
+                f"/bestvideo[height<={height}]+bestaudio/best"
+                f"/best"
+            )
+        else:
+            ydl_opts["format"] = "best[ext=mp4]/bestvideo+bestaudio/best/best"
         ydl_opts["merge_output_format"] = "mp4"
         ydl_opts["prefer_ffmpeg"] = True
-        # Only metadata; avoid forced re-encode that fails on many TikTok files
         ydl_opts["postprocessors"] = [
             {"key": "FFmpegMetadata", "add_metadata": False},
         ]
@@ -239,6 +247,7 @@ async def download_video_with_progress(url, quality, fmt, start_time, end_time):
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                 ydl.download([url])
         except Exception as e:
+            print(f"[download] ERROR for {url[:80]}: {type(e).__name__}: {e}", flush=True)
             download_error[0] = e
         finally:
             loop.call_soon_threadsafe(download_done.set)
