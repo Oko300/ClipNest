@@ -46,7 +46,7 @@ export default function UrlInput({ onFetch, isLoading, error }: Props) {
           onChange={(e) => setUrl(e.target.value)}
           onKeyDown={(e) => { if (e.key === "Enter") handleSubmit() }}
           placeholder="Paste a video link here..."
-          className="flex-1 bg-[#111111] border border-[#1f1f1f] rounded-xl px-4 py-3 text-[#f5f5f5] text-sm placeholder-[#3f3f46] focus:outline-none focus:border-[#6366f1]"
+          className="flex-1 bg-white/10 backdrop-blur-md border border-white/25 rounded-xl px-4 py-3 text-white text-sm placeholder-white/40 focus:outline-none focus:border-[#6366f1] focus:bg-white/15 focus:border-opacity-80 shadow-[inset_0_1px_0_rgba(255,255,255,0.1)] transition-all duration-200"
         />
         <button
           onClick={handleSubmit}
@@ -56,7 +56,7 @@ export default function UrlInput({ onFetch, isLoading, error }: Props) {
           + Add
         </button>
       </div>
-      <p className="text-[#3f3f46] text-xs px-1">
+      <p className="text-white/40 text-xs px-1">
         Press Enter or click Add — you can queue multiple links
       </p>
     </div>
