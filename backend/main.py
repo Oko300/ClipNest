@@ -10,13 +10,14 @@ how old the Render build cache is.
 # ── STEP 1: keep yt-dlp current ──────────────────────────────────────────────
 # This runs the moment `uvicorn main:app` imports this module — well before the
 # event loop starts and before the first health-check ping arrives.
+# curl-cffi is required for TikTok TLS fingerprint impersonation.
 import subprocess, sys
 
-print("[boot] Upgrading yt-dlp …", flush=True)
+print("[boot] Upgrading yt-dlp + curl-cffi …", flush=True)
 try:
     _res = subprocess.run(
         [sys.executable, "-m", "pip", "install", "--upgrade",
-         "yt-dlp", "--quiet", "--no-cache-dir"],
+         "yt-dlp[default,curl-cffi]", "--quiet", "--no-cache-dir"],
         timeout=120,
         check=False,
     )

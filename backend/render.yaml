@@ -4,11 +4,12 @@ services:
     env: python
     plan: free
     # --no-cache-dir forces a fresh yt-dlp on every build (no stale cached wheel)
+    # curl-cffi is required for TikTok TLS impersonation (prevents "Unexpected response from webpage request")
     buildCommand: pip install --no-cache-dir -r requirements.txt && apt-get update && apt-get install -y ffmpeg
-    # Always upgrade yt-dlp to latest BEFORE starting the server.
+    # Always upgrade yt-dlp + curl-cffi to latest BEFORE starting the server.
     # Render free instances spin down frequently; this ensures every cold-start
-    # has the newest TikTok / Instagram / Twitter extractor code.
-    startCommand: pip install -U yt-dlp --quiet --no-cache-dir && uvicorn main:app --host 0.0.0.0 --port $PORT
+    # has the newest TikTok / Instagram / Twitter extractor code + impersonation.
+    startCommand: pip install -U "yt-dlp[default,curl-cffi]" --quiet --no-cache-dir && uvicorn main:app --host 0.0.0.0 --port $PORT
     healthCheckPath: /health
     envVars:
       - key: ALLOWED_ORIGINS
