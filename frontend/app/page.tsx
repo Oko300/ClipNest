@@ -25,227 +25,83 @@ function AnimatedBackground() {
     let animId: number
     let t = 0
 
-    // Stars
     const stars: Array<{x:number;y:number;r:number;opacity:number;twinkle:number;phase:number}> = []
-    // Slow drifting nebula particles
     const nebula: Array<{x:number;y:number;vx:number;vy:number;r:number;opacity:number;color:string}> = []
-    // Planets
     const planets: Array<{x:number;y:number;vx:number;vy:number;r:number;color:string;ringColor:string|null;hasRing:boolean}> = []
 
     const init = () => {
       stars.length = 0
       nebula.length = 0
       planets.length = 0
-
-      // Create stars
       const starCount = Math.floor((w * h / 1200) * particleMultiplier)
       for (let i = 0; i < starCount; i++) {
-        stars.push({
-          x: Math.random() * w,
-          y: Math.random() * h,
-          r: Math.random() * 1.2 + 0.2,
-          opacity: Math.random() * 0.7 + 0.1,
-          twinkle: Math.random() * 0.015 + 0.003,
-          phase: Math.random() * Math.PI * 2,
-        })
+        stars.push({ x: Math.random() * w, y: Math.random() * h, r: Math.random() * 1.2 + 0.2, opacity: Math.random() * 0.7 + 0.1, twinkle: Math.random() * 0.015 + 0.003, phase: Math.random() * Math.PI * 2 })
       }
-
-      // Create nebula clouds
       const nebulaCount = Math.floor((w * h / 15000) * particleMultiplier)
-      const nebulaColors = [
-        "rgba(99,102,241,", // indigo
-        "rgba(139,92,246,", // violet
-        "rgba(59,130,246,", // blue
-        "rgba(168,85,247,", // purple
-      ]
+      const nebulaColors = ["rgba(99,102,241,","rgba(139,92,246,","rgba(59,130,246,","rgba(168,85,247,"]
       for (let i = 0; i < nebulaCount; i++) {
-        nebula.push({
-          x: Math.random() * w,
-          y: Math.random() * h,
-          vx: (Math.random() - 0.5) * 0.05,
-          vy: (Math.random() - 0.5) * 0.05,
-          r: Math.random() * 80 + 30,
-          opacity: Math.random() * 0.04 + 0.01,
-          color: nebulaColors[Math.floor(Math.random() * nebulaColors.length)],
-        })
+        nebula.push({ x: Math.random() * w, y: Math.random() * h, vx: (Math.random() - 0.5) * 0.05, vy: (Math.random() - 0.5) * 0.05, r: Math.random() * 80 + 30, opacity: Math.random() * 0.04 + 0.01, color: nebulaColors[Math.floor(Math.random() * nebulaColors.length)] })
       }
-
-      // Create 2-4 planets
       const planetCount = prefersReduced ? 1 : Math.min(4, Math.max(2, Math.floor(w / 400)))
-      const planetColors = [
-        { body: "#c2956c", ring: "#d4a76a" },
-        { body: "#8fa8c8", ring: null },
-        { body: "#b5885a", ring: "#c9965e" },
-        { body: "#7a9e7e", ring: null },
-      ]
+      const planetColors = [{ body: "#c2956c", ring: "#d4a76a" },{ body: "#8fa8c8", ring: null },{ body: "#b5885a", ring: "#c9965e" },{ body: "#7a9e7e", ring: null }]
       for (let i = 0; i < planetCount; i++) {
         const pc = planetColors[i % planetColors.length]
         const side = Math.random() > 0.5 ? 1 : -1
-        planets.push({
-          x: Math.random() * w,
-          y: Math.random() * h,
-          vx: side * (Math.random() * 0.08 + 0.03),
-          vy: (Math.random() - 0.5) * 0.04,
-          r: Math.random() * 18 + 10,
-          color: pc.body,
-          ringColor: pc.ring,
-          hasRing: pc.ring !== null,
-        })
+        planets.push({ x: Math.random() * w, y: Math.random() * h, vx: side * (Math.random() * 0.08 + 0.03), vy: (Math.random() - 0.5) * 0.04, r: Math.random() * 18 + 10, color: pc.body, ringColor: pc.ring, hasRing: pc.ring !== null })
       }
     }
+
+    const lighten = (hex: string, amount: number) => { const num = parseInt(hex.slice(1), 16); return `rgb(${Math.min(255,(num>>16)+amount)},${Math.min(255,((num>>8)&0xff)+amount)},${Math.min(255,(num&0xff)+amount)})` }
+    const darken  = (hex: string, amount: number) => { const num = parseInt(hex.slice(1), 16); return `rgb(${Math.max(0,(num>>16)-amount)},${Math.max(0,((num>>8)&0xff)-amount)},${Math.max(0,(num&0xff)-amount)})` }
 
     const drawPlanet = (p: typeof planets[0]) => {
-      // Planet body with gradient
-      const grad = ctx.createRadialGradient(
-        p.x - p.r * 0.3, p.y - p.r * 0.3, p.r * 0.1,
-        p.x, p.y, p.r
-      )
-      grad.addColorStop(0, lighten(p.color, 40))
-      grad.addColorStop(0.5, p.color)
-      grad.addColorStop(1, darken(p.color, 40))
-      ctx.beginPath()
-      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2)
-      ctx.fillStyle = grad
-      ctx.globalAlpha = 0.55
-      ctx.fill()
-      ctx.globalAlpha = 1
-
-      // Ring if applicable
+      const grad = ctx.createRadialGradient(p.x - p.r * 0.3, p.y - p.r * 0.3, p.r * 0.1, p.x, p.y, p.r)
+      grad.addColorStop(0, lighten(p.color, 40)); grad.addColorStop(0.5, p.color); grad.addColorStop(1, darken(p.color, 40))
+      ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2); ctx.fillStyle = grad; ctx.globalAlpha = 0.55; ctx.fill(); ctx.globalAlpha = 1
       if (p.hasRing && p.ringColor) {
-        ctx.save()
-        ctx.translate(p.x, p.y)
-        ctx.scale(1, 0.3)
-        ctx.beginPath()
-        ctx.ellipse(0, 0, p.r * 1.8, p.r * 1.8, 0, 0, Math.PI * 2)
-        ctx.strokeStyle = p.ringColor
-        ctx.lineWidth = p.r * 0.25
-        ctx.globalAlpha = 0.2
-        ctx.stroke()
-        ctx.globalAlpha = 1
-        ctx.restore()
+        ctx.save(); ctx.translate(p.x, p.y); ctx.scale(1, 0.3)
+        ctx.beginPath(); ctx.ellipse(0, 0, p.r * 1.8, p.r * 1.8, 0, 0, Math.PI * 2)
+        ctx.strokeStyle = p.ringColor; ctx.lineWidth = p.r * 0.25; ctx.globalAlpha = 0.2; ctx.stroke(); ctx.globalAlpha = 1; ctx.restore()
       }
-
-      // Subtle atmosphere glow
-      const glow = ctx.createRadialGradient(p.x, p.y, p.r * 0.8, p.x, p.y, p.r * 1.4)
-      glow.addColorStop(0, "rgba(150,170,255,0.0)")
-      glow.addColorStop(1, "rgba(150,170,255,0.0)")
-      ctx.beginPath()
-      ctx.arc(p.x, p.y, p.r * 1.4, 0, Math.PI * 2)
-      ctx.fillStyle = glow
-      ctx.fill()
-    }
-
-    const lighten = (hex: string, amount: number) => {
-      const num = parseInt(hex.slice(1), 16)
-      const r = Math.min(255, (num >> 16) + amount)
-      const g = Math.min(255, ((num >> 8) & 0xff) + amount)
-      const b = Math.min(255, (num & 0xff) + amount)
-      return `rgb(${r},${g},${b})`
-    }
-
-    const darken = (hex: string, amount: number) => {
-      const num = parseInt(hex.slice(1), 16)
-      const r = Math.max(0, (num >> 16) - amount)
-      const g = Math.max(0, ((num >> 8) & 0xff) - amount)
-      const b = Math.max(0, (num & 0xff) - amount)
-      return `rgb(${r},${g},${b})`
     }
 
     const draw = () => {
-      ctx.clearRect(0, 0, w, h)
-      t += 0.008
-
-      // Milky Way band
+      ctx.clearRect(0, 0, w, h); t += 0.008
       const milkyWay = ctx.createLinearGradient(0, h * 0.2, w, h * 0.8)
-      milkyWay.addColorStop(0, "rgba(99,102,241,0)")
-      milkyWay.addColorStop(0.3, "rgba(99,102,241,0.018)")
-      milkyWay.addColorStop(0.5, "rgba(139,92,246,0.025)")
-      milkyWay.addColorStop(0.7, "rgba(99,102,241,0.018)")
-      milkyWay.addColorStop(1, "rgba(99,102,241,0)")
-      ctx.fillStyle = milkyWay
-      ctx.fillRect(0, 0, w, h)
-
-      // Draw nebula clouds
+      milkyWay.addColorStop(0, "rgba(99,102,241,0)"); milkyWay.addColorStop(0.3, "rgba(99,102,241,0.018)"); milkyWay.addColorStop(0.5, "rgba(139,92,246,0.025)"); milkyWay.addColorStop(0.7, "rgba(99,102,241,0.018)"); milkyWay.addColorStop(1, "rgba(99,102,241,0)")
+      ctx.fillStyle = milkyWay; ctx.fillRect(0, 0, w, h)
       nebula.forEach(n => {
-        n.x += n.vx
-        n.y += n.vy
-        if (n.x < -n.r) n.x = w + n.r
-        if (n.x > w + n.r) n.x = -n.r
-        if (n.y < -n.r) n.y = h + n.r
-        if (n.y > h + n.r) n.y = -n.r
+        n.x += n.vx; n.y += n.vy
+        if (n.x < -n.r) n.x = w + n.r; if (n.x > w + n.r) n.x = -n.r; if (n.y < -n.r) n.y = h + n.r; if (n.y > h + n.r) n.y = -n.r
         const grad = ctx.createRadialGradient(n.x, n.y, 0, n.x, n.y, n.r)
-        grad.addColorStop(0, n.color + n.opacity + ")")
-        grad.addColorStop(1, n.color + "0)")
-        ctx.beginPath()
-        ctx.arc(n.x, n.y, n.r, 0, Math.PI * 2)
-        ctx.fillStyle = grad
-        ctx.fill()
+        grad.addColorStop(0, n.color + n.opacity + ")"); grad.addColorStop(1, n.color + "0)")
+        ctx.beginPath(); ctx.arc(n.x, n.y, n.r, 0, Math.PI * 2); ctx.fillStyle = grad; ctx.fill()
       })
-
-      // Draw stars with twinkling
       stars.forEach(s => {
         const twinkleOpacity = s.opacity * (0.6 + 0.4 * Math.sin(t * s.twinkle * 80 + s.phase))
-
-        // Draw star glow for larger stars
         if (s.r > 0.8) {
           const glow = ctx.createRadialGradient(s.x, s.y, 0, s.x, s.y, s.r * 3)
-          glow.addColorStop(0, `rgba(255,255,255,${twinkleOpacity * 0.4})`)
-          glow.addColorStop(1, "rgba(255,255,255,0)")
-          ctx.beginPath()
-          ctx.arc(s.x, s.y, s.r * 3, 0, Math.PI * 2)
-          ctx.fillStyle = glow
-          ctx.fill()
+          glow.addColorStop(0, `rgba(255,255,255,${twinkleOpacity * 0.4})`); glow.addColorStop(1, "rgba(255,255,255,0)")
+          ctx.beginPath(); ctx.arc(s.x, s.y, s.r * 3, 0, Math.PI * 2); ctx.fillStyle = glow; ctx.fill()
         }
-
-        // Draw star core
-        ctx.beginPath()
-        ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2)
-        ctx.fillStyle = `rgba(255,255,255,${twinkleOpacity})`
-        ctx.fill()
+        ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2); ctx.fillStyle = `rgba(255,255,255,${twinkleOpacity})`; ctx.fill()
       })
-
-      // Draw planets
       planets.forEach(p => {
-        p.x += p.vx
-        p.y += p.vy
-        if (p.x < -p.r * 3) p.x = w + p.r * 3
-        if (p.x > w + p.r * 3) p.x = -p.r * 3
-        if (p.y < -p.r * 3) p.y = h + p.r * 3
-        if (p.y > h + p.r * 3) p.y = -p.r * 3
+        p.x += p.vx; p.y += p.vy
+        if (p.x < -p.r * 3) p.x = w + p.r * 3; if (p.x > w + p.r * 3) p.x = -p.r * 3; if (p.y < -p.r * 3) p.y = h + p.r * 3; if (p.y > h + p.r * 3) p.y = -p.r * 3
         drawPlanet(p)
       })
-
       animId = requestAnimationFrame(draw)
     }
 
-    init()
-    draw()
-
-    const onResize = () => {
-      w = canvas.width = window.innerWidth
-      h = canvas.height = window.innerHeight
-      canvas.style.width = window.innerWidth + "px"
-      canvas.style.height = window.innerHeight + "px"
-      init()
-    }
+    init(); draw()
+    const onResize = () => { w = canvas.width = window.innerWidth; h = canvas.height = window.innerHeight; canvas.style.width = window.innerWidth + "px"; canvas.style.height = window.innerHeight + "px"; init() }
     window.addEventListener("resize", onResize)
     return () => { cancelAnimationFrame(animId); window.removeEventListener("resize", onResize) }
   }, [])
 
   return (
-    <canvas
-      ref={canvasRef}
-      style={{
-        position: "fixed",
-        top: 0,
-        left: 0,
-        width: "100vw",
-        height: "100vh",
-        pointerEvents: "none",
-        zIndex: 0,
-        opacity: 1,
-      }}
-    />
+    <canvas ref={canvasRef} style={{ position: "fixed", top: 0, left: 0, width: "100vw", height: "100vh", pointerEvents: "none", zIndex: 0, opacity: 1 }} />
   )
 }
 
@@ -264,47 +120,28 @@ function FeedbackForm() {
         headers: { "Content-Type": "application/json", "Accept": "application/json" },
         body: JSON.stringify({ feedback, email: email || "Anonymous", _subject: "ClipNest Feedback" })
       })
-      if (res.ok) {
-        setStatus("sent")
-        setFeedback("")
-        setEmail("")
-        setTimeout(() => { setStatus("idle"); setOpen(false) }, 3000)
-      } else setStatus("error")
+      if (res.ok) { setStatus("sent"); setFeedback(""); setEmail(""); setTimeout(() => { setStatus("idle"); setOpen(false) }, 3000) }
+      else setStatus("error")
     } catch { setStatus("error") }
   }
 
   return (
     <div className="flex flex-col items-center gap-3 py-6">
-      <a
-        href="/about"
-        className="text-[#2a2a2a] hover:text-[#6366f1] text-xs transition-colors duration-300 underline underline-offset-2"
-      >
-        About ClipNest
-      </a>
+      <a href="/about" className="text-[#2a2a2a] hover:text-[#6366f1] text-xs transition-colors duration-300 underline underline-offset-2">About ClipNest</a>
       {!open ? (
-        <button onClick={() => setOpen(true)}
-          className="text-[#3f3f46] hover:text-[#6366f1] text-xs tracking-[0.2em] uppercase transition-colors duration-300">
-          Feedback
-        </button>
+        <button onClick={() => setOpen(true)} className="text-[#3f3f46] hover:text-[#6366f1] text-xs tracking-[0.2em] uppercase transition-colors duration-300">Feedback</button>
       ) : (
         <div className="w-full max-w-md bg-[#0f0f0f] border border-[#1a1a1a] rounded-2xl p-5 flex flex-col gap-3 shadow-2xl">
           <div className="flex items-center justify-between">
             <p className="text-[#52525b] text-xs tracking-wide">Share your thoughts</p>
-            <button onClick={() => { setOpen(false); setStatus("idle") }}
-              className="text-[#3f3f46] hover:text-white text-xs transition-colors">✕</button>
+            <button onClick={() => { setOpen(false); setStatus("idle") }} className="text-[#3f3f46] hover:text-white text-xs transition-colors">✕</button>
           </div>
-          <textarea value={feedback} onChange={e => setFeedback(e.target.value)}
-            placeholder="What would make ClipNest better for you?"
-            rows={3}
-            className="w-full bg-[#0a0a0a] border border-[#1a1a1a] rounded-xl px-3 py-2.5 text-[#d4d4d8] text-xs placeholder-[#3f3f46] resize-none focus:outline-none focus:border-[#6366f1] transition-colors" />
-          <input type="email" value={email} onChange={e => setEmail(e.target.value)}
-            placeholder="Email (optional)"
-            className="w-full bg-[#0a0a0a] border border-[#1a1a1a] rounded-xl px-3 py-2.5 text-[#d4d4d8] text-xs placeholder-[#3f3f46] focus:outline-none focus:border-[#6366f1] transition-colors" />
+          <textarea value={feedback} onChange={e => setFeedback(e.target.value)} placeholder="What would make ClipNest better for you?" rows={3} className="w-full bg-[#0a0a0a] border border-[#1a1a1a] rounded-xl px-3 py-2.5 text-[#d4d4d8] text-xs placeholder-[#3f3f46] resize-none focus:outline-none focus:border-[#6366f1] transition-colors" />
+          <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="Email (optional)" className="w-full bg-[#0a0a0a] border border-[#1a1a1a] rounded-xl px-3 py-2.5 text-[#d4d4d8] text-xs placeholder-[#3f3f46] focus:outline-none focus:border-[#6366f1] transition-colors" />
           {status === "sent" ? (
             <p className="text-[#22c55e] text-xs text-center py-1">✓ Thank you — received.</p>
           ) : (
-            <button onClick={handleSubmit} disabled={status === "sending"}
-              className="w-full bg-[#6366f1] hover:bg-[#5558e3] disabled:opacity-40 text-white text-xs font-medium py-2.5 rounded-xl transition-colors">
+            <button onClick={handleSubmit} disabled={status === "sending"} className="w-full bg-[#6366f1] hover:bg-[#5558e3] disabled:opacity-40 text-white text-xs font-medium py-2.5 rounded-xl transition-colors">
               {status === "sending" ? "Sending…" : "Send"}
             </button>
           )}
@@ -317,16 +154,13 @@ function FeedbackForm() {
 
 function ShareTargetHandler({ onUrl }: { onUrl: (url: string) => void }) {
   const searchParams = useSearchParams()
-
   useEffect(() => {
     const sharedUrl = searchParams.get("url")
     if (sharedUrl && sharedUrl.startsWith("http")) {
       onUrl(sharedUrl)
-      // Clean the URL so refreshing doesn't re-trigger
       window.history.replaceState({}, "", "/")
     }
   }, [searchParams, onUrl])
-
   return null
 }
 
@@ -336,6 +170,8 @@ export default function Home() {
   const [showInstallBanner, setShowInstallBanner] = React.useState(false)
   const [showYouTubeBlock, setShowYouTubeBlock] = React.useState(false)
   const [showAlternatives, setShowAlternatives] = React.useState(false)
+  // Track live SSE connections so they can be closed when a job is removed mid-download
+  const eventSourcesRef = useRef<Map<string, EventSource>>(new Map())
 
   useEffect(() => {
     const handler = (e: any) => { e.preventDefault(); setInstallPrompt(e); setShowInstallBanner(true) }
@@ -394,7 +230,7 @@ export default function Home() {
         if (errorMsg.toLowerCase().includes("private"))
           errorMsg = "This video is private. Only the owner can access it."
         else if (errorMsg.toLowerCase().includes("sign in") || errorMsg.toLowerCase().includes("bot"))
-          errorMsg = "YouTube is currently unavailable. Try TikTok, Instagram, Twitter or Facebook."
+          errorMsg = "This content requires login or is bot-protected. Try a public video."
         else if (errorMsg.toLowerCase().includes("not exist") || errorMsg.toLowerCase().includes("removed"))
           errorMsg = "This video no longer exists or has been removed."
         else if (errorMsg.toLowerCase().includes("region"))
@@ -415,16 +251,14 @@ export default function Home() {
     const job = jobs.find(j => j.id === jobId)
     if (!job) return
     updateJob(jobId, {
-      downloadState: "downloading",
-      progress: 0,
-      speed: "",
-      eta: "",
-      downloadError: "",
-      outputFilename: "",
-      fileId: "",
+      downloadState: "downloading", progress: 0, speed: "", eta: "",
+      downloadError: "", outputFilename: "", fileId: "",
     })
     const sseUrl = `${process.env.NEXT_PUBLIC_API_URL}/api/download/stream?url=${encodeURIComponent(job.url)}&quality=${job.selectedQuality}&format_type=${job.selectedFormat}${job.startTime ? `&start_time=${job.startTime}` : ""}${job.endTime ? `&end_time=${job.endTime}` : ""}`
     const eventSource = new EventSource(sseUrl)
+    // Register so removeJob can close it
+    eventSourcesRef.current.set(jobId, eventSource)
+
     eventSource.onmessage = (event) => {
       if (!event.data?.trim()) return
       let parsed: any
@@ -435,6 +269,7 @@ export default function Home() {
         updateJob(jobId, { progress: 99, speed: "Processing…", eta: "" })
       } else if (parsed.status === "done") {
         updateJob(jobId, { downloadState: "done", progress: 100, fileId: parsed.file_id, outputFilename: parsed.filename })
+        eventSourcesRef.current.delete(jobId)
         eventSource.close()
         try {
           const a = document.createElement("a")
@@ -448,18 +283,14 @@ export default function Home() {
           window.open(`${process.env.NEXT_PUBLIC_API_URL}/api/download/file/${parsed.file_id}`, "_blank")
         }
       } else if (parsed.status === "error") {
-        updateJob(jobId, {
-          downloadState: "error",
-          downloadError: parsed.message || "Download failed. Tap Retry to try again.",
-        })
+        updateJob(jobId, { downloadState: "error", downloadError: parsed.message || "Download failed. Tap Retry to try again." })
+        eventSourcesRef.current.delete(jobId)
         eventSource.close()
       }
     }
     eventSource.onerror = () => {
-      updateJob(jobId, {
-        downloadState: "error",
-        downloadError: "Connection lost or download failed. Tap Retry to try again.",
-      })
+      updateJob(jobId, { downloadState: "error", downloadError: "Connection lost or download failed. Tap Retry to try again." })
+      eventSourcesRef.current.delete(jobId)
       eventSource.close()
     }
   }
@@ -467,21 +298,19 @@ export default function Home() {
   const updateJobField = (jobId: string, field: string, value: any) =>
     setJobs(prev => prev.map(j => j.id === jobId ? { ...j, [field]: value } : j))
 
-  const removeJob = (jobId: string) =>
+  const removeJob = (jobId: string) => {
+    // Close any in-flight SSE connection first to avoid leaking server-side streams
+    const es = eventSourcesRef.current.get(jobId)
+    if (es) { es.close(); eventSourcesRef.current.delete(jobId) }
     setJobs(prev => prev.filter(j => j.id !== jobId))
+  }
 
   return (
     <div className="min-h-screen bg-[#080808] relative overflow-hidden">
       <AnimatedBackground />
-
-      {/* Subtle gradient overlay */}
-      <div style={{
-        position: "fixed", inset: 0, zIndex: 1, pointerEvents: "none",
-        background: "radial-gradient(ellipse 80% 50% at 50% -10%, rgba(99,102,241,0.08) 0%, transparent 70%)",
-      }} />
+      <div style={{ position: "fixed", inset: 0, zIndex: 1, pointerEvents: "none", background: "radial-gradient(ellipse 80% 50% at 50% -10%, rgba(99,102,241,0.08) 0%, transparent 70%)" }} />
 
       <div className="relative z-10 min-h-screen flex flex-col">
-
         {/* Nav */}
         <nav className="flex items-center justify-between px-6 py-5 max-w-5xl mx-auto w-full">
           <div className="flex items-center gap-2.5">
@@ -493,15 +322,12 @@ export default function Home() {
           <div className="flex items-center gap-4">
             <span className="text-[#3f3f46] text-xs">No signup required</span>
             {showInstallBanner && (
-              <button onClick={handleInstall}
-                className="text-xs bg-[#6366f1] hover:bg-[#5558e3] text-white px-3 py-1.5 rounded-lg transition-colors">
-                Install App
-              </button>
+              <button onClick={handleInstall} className="text-xs bg-[#6366f1] hover:bg-[#5558e3] text-white px-3 py-1.5 rounded-lg transition-colors">Install App</button>
             )}
           </div>
         </nav>
 
-        {/* Hero */}
+        {/* Main */}
         <main className="flex-1 flex flex-col items-center justify-start px-4 pt-12 pb-24 max-w-2xl mx-auto w-full gap-8">
           <Suspense fallback={null}>
             <ShareTargetHandler onUrl={handleSharedUrl} />
@@ -518,17 +344,14 @@ export default function Home() {
               <span className="text-[#6366f1]">Instantly.</span>
             </h1>
             <p className="text-[#71717a] text-base max-w-md mx-auto leading-relaxed">
-              Paste a link from TikTok, Instagram, Twitter, Facebook
-              or 1000+ other platforms. Get the file in seconds.
+              Paste a link from TikTok, Instagram, Twitter, Facebook or 1000+ other platforms. Get the file in seconds.
             </p>
           </div>
 
           {/* Supported platforms */}
           <div className="flex items-center gap-3 flex-wrap justify-center">
             {["TikTok", "Instagram", "Twitter", "Facebook", "Vimeo", "1000+ more"].map((p, i) => (
-              <span key={p} className={`text-xs px-2.5 py-1 rounded-full border ${i < 5 ? "border-[#1a1a1a] text-[#52525b] bg-[#0f0f0f]" : "text-[#3f3f46]"}`}>
-                {p}
-              </span>
+              <span key={p} className={`text-xs px-2.5 py-1 rounded-full border ${i < 5 ? "border-[#1a1a1a] text-[#52525b] bg-[#0f0f0f]" : "text-[#3f3f46]"}`}>{p}</span>
             ))}
           </div>
 
@@ -543,22 +366,16 @@ export default function Home() {
               <div className="flex items-start justify-between gap-3">
                 <div className="flex-1">
                   <p className="text-white text-sm font-medium">YouTube is currently unavailable</p>
-                  <p className="text-[#52525b] text-xs mt-1 leading-relaxed">
-                    We have disabled YouTube to keep ClipNest fast and reliable for everyone.
-                  </p>
+                  <p className="text-[#52525b] text-xs mt-1 leading-relaxed">We have disabled YouTube to keep ClipNest fast and reliable for everyone.</p>
                 </div>
-                <button onClick={() => { setShowYouTubeBlock(false); setShowAlternatives(false) }}
-                  className="text-[#3f3f46] hover:text-white text-xs transition-colors">✕</button>
+                <button onClick={() => { setShowYouTubeBlock(false); setShowAlternatives(false) }} className="text-[#3f3f46] hover:text-white text-xs transition-colors">✕</button>
               </div>
-              <button onClick={() => setShowAlternatives(!showAlternatives)}
-                className="text-[#6366f1] text-xs text-left hover:underline">
+              <button onClick={() => setShowAlternatives(!showAlternatives)} className="text-[#6366f1] text-xs text-left hover:underline">
                 {showAlternatives ? "Hide alternatives ↑" : "Find similar content on other platforms →"}
               </button>
               {showAlternatives && (
                 <div className="flex flex-col gap-2 pt-3 border-t border-[#1a1a1a]">
-                  <p className="text-[#52525b] text-xs leading-relaxed mb-1">
-                    These platforms work perfectly with ClipNest:
-                  </p>
+                  <p className="text-[#52525b] text-xs leading-relaxed mb-1">These platforms work perfectly with ClipNest:</p>
                   {[
                     { name: "PeerTube", url: "https://peertube.tv", desc: "Open-source video — lectures, docs, indie content" },
                     { name: "Odysee", url: "https://odysee.com", desc: "Decentralized video platform" },
@@ -581,7 +398,6 @@ export default function Home() {
           {/* Jobs or Empty State */}
           {jobs.length === 0 ? (
             <div className="w-full flex flex-col items-center gap-6 py-8">
-              {/* How it works */}
               <div className="w-full grid grid-cols-1 md:grid-cols-3 gap-3">
                 {[
                   { step: "01", title: "Paste link", desc: "Any video URL from 1000+ platforms" },
@@ -610,15 +426,12 @@ export default function Home() {
             </div>
           )}
 
-        <FeedbackForm />
-
+          <FeedbackForm />
         </main>
 
         {/* Footer */}
         <footer className="relative z-10 text-center py-4 border-t border-[#0f0f0f]">
-          <p className="text-[#2a2a2a] text-xs">
-            ClipNest · Free forever · No ads
-          </p>
+          <p className="text-[#2a2a2a] text-xs">ClipNest · Free forever · No ads</p>
         </footer>
       </div>
     </div>

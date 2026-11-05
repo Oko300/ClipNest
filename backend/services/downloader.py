@@ -6,13 +6,23 @@ import uuid
 import base64
 import concurrent.futures
 
+# Up-to-date browser headers — improves compatibility with TikTok, Instagram,
+# Twitter/X, Facebook, Reddit and other platforms that inspect UA / Sec-* headers.
 COMMON_HEADERS = {
-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36",
     "Accept-Language": "en-US,en;q=0.9",
-    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
+    "Accept-Encoding": "gzip, deflate, br",
+    "Sec-Ch-Ua": '"Google Chrome";v="125", "Chromium";v="125", "Not.A/Brand";v="24"',
+    "Sec-Ch-Ua-Mobile": "?0",
+    "Sec-Ch-Ua-Platform": '"Windows"',
+    "Sec-Fetch-Dest": "document",
+    "Sec-Fetch-Mode": "navigate",
+    "Sec-Fetch-Site": "none",
 }
 
 COOKIES_PATH = "/tmp/yt_cookies.txt"
+
 
 def setup_cookies():
     """Always rewrite cookies from environment variable on every call."""
@@ -26,6 +36,7 @@ def setup_cookies():
     except Exception as e:
         print(f"Failed to write cookies: {e}")
 
+
 def get_cookies_opts():
     """Write cookies and return cookiefile option."""
     setup_cookies()
@@ -34,20 +45,46 @@ def get_cookies_opts():
     return {}
 
 
+def sanitize_error(raw: str) -> str:
+    """Convert raw yt-dlp error strings into short, user-friendly messages."""
+    msg = raw.lower()
+    if "login" in msg or "sign in" in msg or "authentication" in msg or "log in" in msg:
+        return "This content requires login. Try a public video instead."
+    if "private" in msg:
+        return "This video is private and cannot be downloaded."
+    if "not exist" in msg or "removed" in msg or "deleted" in msg or "no video" in msg or "404" in msg:
+        return "This video no longer exists or has been removed."
+    if "geo" in msg or "not available in your country" in msg or "region" in msg:
+        return "This video is not available in your region."
+    if "max downloads" in msg or "playlist" in msg:
+        return "Playlist URLs are not supported. Please paste a single video link."
+    if "unsupported url" in msg or "no suitable" in msg or "extractor" in msg:
+        return "This link is not supported. Try TikTok, Instagram, Twitter, Facebook or Vimeo."
+    if "rate" in msg or "too many" in msg or "throttl" in msg:
+        return "The platform is rate-limiting downloads. Please wait a moment and try again."
+    if "timeout" in msg or "timed out" in msg:
+        return "Connection timed out. Please try again."
+    return "Download failed. Please check the link and try again."
+
+
 async def get_video_info(url: str):
     ydl_opts = {
-        'quiet': True,
-        'no_warnings': True,
-        'extract_flat': False,
-        'socket_timeout': 30,
-        'retries': 5,
-        'fragment_retries': 5,
-        'nocheckcertificate': True,
-        'http_headers': COMMON_HEADERS,
+        "quiet": True,
+        "no_warnings": True,
+        "extract_flat": False,
+        # Prevent accidentally fetching an entire playlist
+        "noplaylist": True,
+        "playlistend": 1,
+        "socket_timeout": 15,
+        "retries": 3,
+        "fragment_retries": 3,
+        "nocheckcertificate": True,
+        "http_headers": COMMON_HEADERS,
         **get_cookies_opts(),
     }
     try:
         loop = asyncio.get_event_loop()
+
         def _extract():
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                 return ydl.extract_info(url, download=False)
@@ -66,9 +103,9 @@ async def get_video_info(url: str):
         }
 
     except yt_dlp.utils.DownloadError as e:
-        raise ValueError(f"Could not fetch video info: {e}")
+        raise ValueError(sanitize_error(str(e)))
     except Exception as e:
-        raise ValueError(f"An unexpected error occurred: {e}")
+        raise ValueError(sanitize_error(str(e)))
 
 
 async def download_video_with_progress(url, quality, fmt, start_time, end_time):
@@ -78,7 +115,7 @@ async def download_video_with_progress(url, quality, fmt, start_time, end_time):
 
     # Register download start time for 2-day retention
     try:
-        import json, time
+        import time
         registry_path = "/tmp/download_registry.json"
         registry = {}
         if os.path.exists(registry_path):
@@ -98,12 +135,18 @@ async def download_video_with_progress(url, quality, fmt, start_time, end_time):
         "outtmpl": f"{folder}/%(title)s.%(ext)s",
         "quiet": True,
         "no_warnings": True,
-        "concurrent_fragment_downloads": 4,
-        "http_chunk_size": 10485760,
-        "socket_timeout": 30,
-        "retries": 3,
-        "fragment_retries": 3,
-        "skip_unavailable_fragments": True,
+        # Safety: never try to download an entire playlist
+        "noplaylist": True,
+        "max_downloads": 1,
+        # 2 concurrent fragments: fast enough but won't trigger platform rate-limits
+        "concurrent_fragment_downloads": 2,
+        # 1 MB chunks — more reliable across platforms than the previous 10 MB
+        "http_chunk_size": 1048576,
+        "socket_timeout": 20,
+        "retries": 5,
+        "fragment_retries": 5,
+        # False: don't silently produce broken/incomplete files
+        "skip_unavailable_fragments": False,
         "continuedl": True,
         "noprogress": True,
         "nopart": False,
@@ -155,12 +198,9 @@ async def download_video_with_progress(url, quality, fmt, start_time, end_time):
             {
                 "key": "FFmpegMetadata",
                 "add_metadata": False,
-            }
+            },
         ]
-        # Re-encode audio to AAC ONLY for merged MP4 output, so audio streams
-        # like opus/webm (which can't be copied into an mp4 container) stay
-        # playable. Scoped to the video branch so it never overrides the audio
-        # extractor's codec (mp3/wav) in the audio branch above.
+        # Re-encode audio to AAC so opus/webm streams are playable inside mp4.
         ydl_opts["postprocessor_args"] = {
             "ffmpeg": ["-c:a", "aac", "-b:a", "192k"]
         }
@@ -196,23 +236,30 @@ async def download_video_with_progress(url, quality, fmt, start_time, end_time):
 
     yield f"data: {json.dumps({'status': 'downloading', 'percent': '0%', 'speed': '', 'eta': ''})}\n\n"
 
+    # Poll every 2 seconds (was 15s — users now see near-real-time progress)
     while not download_done.is_set():
         try:
             await asyncio.wait_for(
                 asyncio.shield(download_done.wait()),
-                timeout=15,
+                timeout=2,
             )
         except asyncio.TimeoutError:
             yield f"data: {json.dumps({'status': 'downloading', 'percent': progress_data['percent'], 'speed': progress_data['speed'], 'eta': progress_data['eta']})}\n\n"
 
     if download_error[0]:
-        yield f"data: {json.dumps({'status': 'error', 'message': str(download_error[0])})}\n\n"
+        yield f"data: {json.dumps({'status': 'error', 'message': sanitize_error(str(download_error[0]))})}\n\n"
         return
+
+    # Signal FFmpeg post-processing phase so the UI can show "Processing…"
+    yield f"data: {json.dumps({'status': 'processing', 'percent': '99%', 'speed': 'Processing\u2026', 'eta': ''})}\n\n"
 
     found_file = None
     found_path = None
     if os.path.exists(folder):
         for fname in os.listdir(folder):
+            # Skip yt-dlp temp files that weren't cleaned up
+            if fname.endswith(".part") or fname.endswith(".ytdl"):
+                continue
             found_file = fname
             found_path = os.path.join(folder, fname)
             break
@@ -220,4 +267,4 @@ async def download_video_with_progress(url, quality, fmt, start_time, end_time):
     if found_path:
         yield f"data: {json.dumps({'status': 'done', 'file_id': file_id, 'filename': found_file})}\n\n"
     else:
-        yield f"data: {json.dumps({'status': 'error', 'message': 'Download failed: output file not found'})}\n\n"
+        yield f"data: {json.dumps({'status': 'error', 'message': 'Download failed: output file not found. Please try again.'})}\n\n"

@@ -8,6 +8,7 @@ from services.downloader import get_video_info
 
 router = APIRouter()
 
+
 def is_safe_url(url: str) -> bool:
     try:
         parsed = urlparse(url)
@@ -22,13 +23,14 @@ def is_safe_url(url: str) -> bool:
         try:
             ip = ipaddress.ip_address(host)
             if (ip.is_private or ip.is_loopback or
-                ip.is_link_local or ip.is_reserved):
+                    ip.is_link_local or ip.is_reserved):
                 return False
         except ValueError:
-            pass  # host is a domain name, not an IP — that is fine
+            pass  # host is a domain name — that is fine
         return True
     except Exception:
         return False
+
 
 def build_formats(info: dict) -> list:
     formats = []
@@ -39,9 +41,7 @@ def build_formats(info: dict) -> list:
     # Video formats — pick best per resolution
     for f in reversed(raw_formats):
         height = f.get("height")
-        ext = f.get("ext", "mp4")
         vcodec = f.get("vcodec", "none")
-        acodec = f.get("acodec", "none")
         filesize = f.get("filesize") or f.get("filesize_approx") or 0
 
         if not height or vcodec == "none":
@@ -61,55 +61,46 @@ def build_formats(info: dict) -> list:
             "format_id": f.get("format_id"),
         })
 
-    # Sort by resolution descending
+    # Sort by resolution descending, cap at best 5
     formats.sort(key=lambda x: int(x["quality"].replace("p", "")), reverse=True)
-
-    # Cap at best 5 video options
     formats = formats[:5]
 
-    # Always add Audio options at the end
-    formats.append({
-        "quality": "Audio — MP3",
-        "ext": "mp3",
-        "filesize_mb": None,
-        "format_id": "bestaudio",
-    })
-    formats.append({
-        "quality": "Audio — M4A",
-        "ext": "m4a",
-        "filesize_mb": None,
-        "format_id": "bestaudio",
-    })
-    formats.append({
-        "quality": "Audio — WAV",
-        "ext": "wav",
-        "filesize_mb": None,
-        "format_id": "bestaudio",
-    })
+    # Audio options — always appended
+    formats.append({"quality": "Audio — MP3", "ext": "mp3", "filesize_mb": None, "format_id": "bestaudio"})
+    formats.append({"quality": "Audio — M4A", "ext": "m4a", "filesize_mb": None, "format_id": "bestaudio"})
+    formats.append({"quality": "Audio — WAV", "ext": "wav", "filesize_mb": None, "format_id": "bestaudio"})
 
     return formats
+
 
 class InfoRequest(BaseModel):
     url: str
 
+
 @router.post("/")
 @limiter.limit("10/minute")
 async def get_info(request: Request, body: InfoRequest):
-    youtube_patterns = [
-        "youtube.com", "youtu.be", "m.youtube.com",
-        "youtube-nocookie.com"
-    ]
+    # Block YouTube
+    youtube_patterns = ["youtube.com", "youtu.be", "m.youtube.com", "youtube-nocookie.com"]
     if any(p in body.url.lower() for p in youtube_patterns):
         return JSONResponse(
             status_code=400,
             content={"error": "YouTube is currently unavailable on ClipNest."}
         )
+
     if not is_safe_url(body.url):
         raise HTTPException(status_code=400, detail="Invalid or blocked URL.")
+
     try:
         video_info = await get_video_info(body.url)
         return video_info
+
     except ValueError as e:
+        # sanitize_error() in downloader.py already cleaned the message
         return JSONResponse(status_code=400, content={"error": str(e)})
+
     except Exception:
-        return JSONResponse(status_code=500, content={"error": "Something went wrong. Please check the link and try again."})
+        return JSONResponse(
+            status_code=500,
+            content={"error": "Something went wrong. Please check the link and try again."}
+        )
