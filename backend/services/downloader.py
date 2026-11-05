@@ -62,7 +62,7 @@ def sanitize_error(raw: str) -> str:
         return "This video no longer exists or has been removed."
     if "geo" in msg or "not available in your country" in msg or "region" in msg:
         return "This video is not available in your region."
-    if "max downloads" in msg or ("playlist" in msg and "not" not in msg):
+    if "playlist" in msg and "not" not in msg and "max" not in msg:
         return "Playlist URLs are not supported. Please paste a single video link."
     if "unsupported url" in msg or "no suitable" in msg:
         return "This link is not supported. Try TikTok, Instagram, Twitter, Facebook or Vimeo."
@@ -181,7 +181,6 @@ async def download_video_with_progress(url, quality, fmt, start_time, end_time):
         "quiet": True,
         "no_warnings": True,
         "noplaylist": True,
-        "max_downloads": 1,
         "concurrent_fragment_downloads": 2,
         "http_chunk_size": 1048576,
         "socket_timeout": 20,
