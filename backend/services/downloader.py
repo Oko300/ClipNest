@@ -9,11 +9,11 @@ import concurrent.futures
 # Up-to-date browser headers — improves compatibility with TikTok, Instagram,
 # Twitter/X, Facebook, Reddit and other platforms that inspect UA / Sec-* headers.
 COMMON_HEADERS = {
-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36",
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
     "Accept-Language": "en-US,en;q=0.9",
     "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
     "Accept-Encoding": "gzip, deflate, br",
-    "Sec-Ch-Ua": '"Google Chrome";v="125", "Chromium";v="125", "Not.A/Brand";v="24"',
+    "Sec-Ch-Ua": '"Google Chrome";v="131", "Chromium";v="131", "Not.A/Brand";v="24"',
     "Sec-Ch-Ua-Mobile": "?0",
     "Sec-Ch-Ua-Platform": '"Windows"',
     "Sec-Fetch-Dest": "document",
@@ -24,7 +24,7 @@ COMMON_HEADERS = {
 # Mobile user-agent — used as a fallback for TikTok / Instagram when the
 # desktop UA triggers bot-detection on the first attempt.
 MOBILE_HEADERS = {
-    "User-Agent": "Mozilla/5.0 (Linux; Android 13; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.6422.165 Mobile Safari/537.36",
+    "User-Agent": "Mozilla/5.0 (Linux; Android 13; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Mobile Safari/537.36",
     "Accept-Language": "en-US,en;q=0.9",
     "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
 }
@@ -203,22 +203,19 @@ async def download_video_with_progress(url, quality, fmt, start_time, end_time):
         ]
     else:
         height = str(quality).replace("p", "")
+        # TikTok / X often serve progressive (single-file) streams.
+        # Prefer progressive best within height, then fall back to merged, then any best.
         ydl_opts["format"] = (
-            f"bestvideo[height<={height}][ext=mp4]+bestaudio[ext=m4a]"
-            f"/bestvideo[height<={height}][ext=mp4]+bestaudio"
-            f"/bestvideo[height<={height}]+bestaudio[ext=m4a]"
-            f"/bestvideo[height<={height}]+bestaudio"
-            f"/best[height<={height}][ext=mp4]"
-            f"/best[height<={height}]"
+            f"best[height<={height}][ext=mp4]/best[height<={height}]"
+            f"/bestvideo[height<={height}]+bestaudio/best"
             f"/best"
         )
         ydl_opts["merge_output_format"] = "mp4"
         ydl_opts["prefer_ffmpeg"] = True
+        # Only metadata; avoid forced re-encode that fails on many TikTok files
         ydl_opts["postprocessors"] = [
-            {"key": "FFmpegVideoConvertor", "preferedformat": "mp4"},
             {"key": "FFmpegMetadata", "add_metadata": False},
         ]
-        ydl_opts["postprocessor_args"] = {"ffmpeg": ["-c:a", "aac", "-b:a", "192k"]}
 
     if start_time and end_time:
         ydl_opts["download_sections"] = [f"*{start_time}-{end_time}"]
