@@ -22,7 +22,7 @@ COMMON_HEADERS = {
 }
 
 # Mobile user-agent — used as a fallback for TikTok / Instagram when the
-# desktop UA is blocked by the platform.
+# desktop UA triggers bot-detection on the first attempt.
 MOBILE_HEADERS = {
     "User-Agent": "Mozilla/5.0 (Linux; Android 13; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.6422.165 Mobile Safari/537.36",
     "Accept-Language": "en-US,en;q=0.9",
@@ -33,7 +33,6 @@ COOKIES_PATH = "/tmp/yt_cookies.txt"
 
 
 def setup_cookies():
-    """Always rewrite cookies from environment variable on every call."""
     b64 = os.environ.get("YOUTUBE_COOKIES_B64", "")
     if not b64:
         return
@@ -46,7 +45,6 @@ def setup_cookies():
 
 
 def get_cookies_opts():
-    """Write cookies and return cookiefile option."""
     setup_cookies()
     if os.path.exists(COOKIES_PATH):
         return {"cookiefile": COOKIES_PATH}
@@ -66,21 +64,37 @@ def sanitize_error(raw: str) -> str:
         return "This video is not available in your region."
     if "max downloads" in msg or ("playlist" in msg and "not" not in msg):
         return "Playlist URLs are not supported. Please paste a single video link."
-    if "unsupported url" in msg or "no suitable" in msg or "extractor" in msg:
+    if "unsupported url" in msg or "no suitable" in msg:
         return "This link is not supported. Try TikTok, Instagram, Twitter, Facebook or Vimeo."
     if "rate" in msg or "too many" in msg or "throttl" in msg:
         return "The platform is rate-limiting downloads. Please wait a moment and try again."
     if "timeout" in msg or "timed out" in msg:
         return "Connection timed out. Please try again."
     if "unexpected response" in msg or "webpage request" in msg:
-        return "The platform returned an unexpected response. Please try again in a moment."
+        return "Platform returned an unexpected response — the server is updating. Please try again in 30 seconds."
     if "403" in msg or "forbidden" in msg:
         return "Access denied by the platform. Try a different video or wait a few minutes."
+    if "status code 0" in msg or "video not available" in msg:
+        return "Could not reach the platform. Please try again in a moment."
     return "Could not fetch video info. Please check the link and try again."
 
 
-def _build_info_opts(headers: dict) -> dict:
-    """Base yt-dlp options for info extraction."""
+def _detect_platform(url: str) -> str:
+    u = url.lower()
+    if "tiktok.com" in u:
+        return "tiktok"
+    if "instagram.com" in u:
+        return "instagram"
+    if "twitter.com" in u or "x.com" in u:
+        return "twitter"
+    if "facebook.com" in u or "fb.watch" in u:
+        return "facebook"
+    if "reddit.com" in u or "redd.it" in u:
+        return "reddit"
+    return "generic"
+
+
+def _base_info_opts(headers: dict) -> dict:
     return {
         "quiet": True,
         "no_warnings": True,
@@ -96,65 +110,24 @@ def _build_info_opts(headers: dict) -> dict:
     }
 
 
-def _detect_platform(url: str) -> str:
-    """Return a short platform key for extractor-arg injection."""
-    u = url.lower()
-    if "tiktok.com" in u:
-        return "tiktok"
-    if "instagram.com" in u:
-        return "instagram"
-    if "twitter.com" in u or "x.com" in u:
-        return "twitter"
-    if "facebook.com" in u or "fb.watch" in u:
-        return "facebook"
-    if "reddit.com" in u or "redd.it" in u:
-        return "reddit"
-    return "generic"
-
-
-def _add_platform_args(opts: dict, platform: str, mobile: bool = False) -> dict:
-    """Inject platform-specific extractor args that improve reliability."""
-    opts = opts.copy()
-    if platform == "tiktok":
-        # Use the mobile (non-web) API path — avoids the
-        # "Unexpected response from webpage request" error that hits
-        # the desktop extractor when TikTok changes their page structure.
-        opts["extractor_args"] = {
-            "tiktok": {
-                "webpage_download": ["0"],   # skip webpage; use direct API
-                "api_hostname": ["api22-normal-c-useast2a.tiktokv.com"],
-            }
-        }
-        if mobile:
-            opts["http_headers"] = MOBILE_HEADERS
-    elif platform == "instagram":
-        opts["extractor_args"] = {
-            "instagram": {
-                "include_dash_manifest": ["0"],
-            }
-        }
-    return opts
-
-
 async def get_video_info(url: str):
     platform = _detect_platform(url)
 
-    # Attempt 1: standard desktop headers + platform-specific args
-    opts1 = _build_info_opts(COMMON_HEADERS)
-    opts1 = _add_platform_args(opts1, platform, mobile=False)
+    # Attempt 1: standard desktop headers (works for most platforms)
+    # Attempt 2 (TikTok / Instagram only): mobile UA fallback
+    attempts = [
+        _base_info_opts(COMMON_HEADERS),
+    ]
+    if platform in ("tiktok", "instagram"):
+        attempts.append(_base_info_opts(MOBILE_HEADERS))
 
-    # Attempt 2 (fallback for TikTok / Instagram): mobile headers
-    opts2 = _build_info_opts(MOBILE_HEADERS)
-    opts2 = _add_platform_args(opts2, platform, mobile=True)
-
-    attempts = [opts1, opts2] if platform in ("tiktok", "instagram") else [opts1]
     last_error: Exception = Exception("Unknown error")
 
-    for attempt_opts in attempts:
+    for opts in attempts:
         try:
             loop = asyncio.get_event_loop()
 
-            def _extract(ydl_opts=attempt_opts):
+            def _extract(ydl_opts=opts):
                 with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                     return ydl.extract_info(url, download=False)
 
@@ -173,7 +146,7 @@ async def get_video_info(url: str):
 
         except Exception as e:
             last_error = e
-            continue  # try next attempt
+            continue
 
     raise ValueError(sanitize_error(str(last_error)))
 
@@ -183,7 +156,7 @@ async def download_video_with_progress(url, quality, fmt, start_time, end_time):
     folder = f"/tmp/{file_id}"
     os.makedirs(folder, exist_ok=True)
 
-    # Register download start time for 2-day retention
+    # Register for 2-day cleanup
     try:
         import time
         registry_path = "/tmp/download_registry.json"
@@ -191,17 +164,11 @@ async def download_video_with_progress(url, quality, fmt, start_time, end_time):
         if os.path.exists(registry_path):
             with open(registry_path, "r") as f:
                 registry = json.load(f)
-        registry[file_id] = {
-            "folder": folder,
-            "created_at": time.time(),
-            "status": "downloading",
-        }
+        registry[file_id] = {"folder": folder, "created_at": time.time(), "status": "downloading"}
         with open(registry_path, "w") as f:
             json.dump(registry, f)
     except Exception:
         pass
-
-    platform = _detect_platform(url)
 
     ydl_opts = {
         "outtmpl": f"{folder}/%(title)s.%(ext)s",
@@ -226,27 +193,13 @@ async def download_video_with_progress(url, quality, fmt, start_time, end_time):
         **get_cookies_opts(),
     }
 
-    # Inject platform-specific args for download too
-    ydl_opts = _add_platform_args(ydl_opts, platform, mobile=False)
-
     if fmt in ("mp3", "m4a", "wav") or (isinstance(quality, str) and quality.startswith("Audio")):
         ydl_opts["format"] = "bestaudio/best"
-        codec_map = {
-            "mp3": ("mp3", "192"),
-            "m4a": ("m4a", "192"),
-            "wav": ("wav", "0"),
-        }
+        codec_map = {"mp3": ("mp3", "192"), "m4a": ("m4a", "192"), "wav": ("wav", "0")}
         codec, quality_val = codec_map.get(fmt, ("mp3", "192"))
         ydl_opts["postprocessors"] = [
-            {
-                "key": "FFmpegExtractAudio",
-                "preferredcodec": codec,
-                "preferredquality": quality_val,
-            },
-            {
-                "key": "FFmpegMetadata",
-                "add_metadata": False,
-            },
+            {"key": "FFmpegExtractAudio", "preferredcodec": codec, "preferredquality": quality_val},
+            {"key": "FFmpegMetadata", "add_metadata": False},
         ]
     else:
         height = str(quality).replace("p", "")
@@ -262,18 +215,10 @@ async def download_video_with_progress(url, quality, fmt, start_time, end_time):
         ydl_opts["merge_output_format"] = "mp4"
         ydl_opts["prefer_ffmpeg"] = True
         ydl_opts["postprocessors"] = [
-            {
-                "key": "FFmpegVideoConvertor",
-                "preferedformat": "mp4",
-            },
-            {
-                "key": "FFmpegMetadata",
-                "add_metadata": False,
-            },
+            {"key": "FFmpegVideoConvertor", "preferedformat": "mp4"},
+            {"key": "FFmpegMetadata", "add_metadata": False},
         ]
-        ydl_opts["postprocessor_args"] = {
-            "ffmpeg": ["-c:a", "aac", "-b:a", "192k"]
-        }
+        ydl_opts["postprocessor_args"] = {"ffmpeg": ["-c:a", "aac", "-b:a", "192k"]}
 
     if start_time and end_time:
         ydl_opts["download_sections"] = [f"*{start_time}-{end_time}"]
@@ -306,13 +251,9 @@ async def download_video_with_progress(url, quality, fmt, start_time, end_time):
 
     yield f"data: {json.dumps({'status': 'downloading', 'percent': '0%', 'speed': '', 'eta': ''})}\n\n"
 
-    # Poll every 2 seconds for near-real-time progress updates
     while not download_done.is_set():
         try:
-            await asyncio.wait_for(
-                asyncio.shield(download_done.wait()),
-                timeout=2,
-            )
+            await asyncio.wait_for(asyncio.shield(download_done.wait()), timeout=2)
         except asyncio.TimeoutError:
             yield f"data: {json.dumps({'status': 'downloading', 'percent': progress_data['percent'], 'speed': progress_data['speed'], 'eta': progress_data['eta']})}\n\n"
 
@@ -320,11 +261,9 @@ async def download_video_with_progress(url, quality, fmt, start_time, end_time):
         yield f"data: {json.dumps({'status': 'error', 'message': sanitize_error(str(download_error[0]))})}\n\n"
         return
 
-    # Signal FFmpeg post-processing phase so the UI can show "Processing…"
     yield f"data: {json.dumps({'status': 'processing', 'percent': '99%', 'speed': 'Processing\u2026', 'eta': ''})}\n\n"
 
-    found_file = None
-    found_path = None
+    found_file = found_path = None
     if os.path.exists(folder):
         for fname in os.listdir(folder):
             if fname.endswith(".part") or fname.endswith(".ytdl"):
